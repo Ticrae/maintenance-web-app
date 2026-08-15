@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AppDataProvider } from "@/lib/app-data-context";
 
 export const metadata: Metadata = {
   title: "Upkeep — Estate maintenance",
@@ -14,9 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-canvas text-body">
-        <AppDataProvider>{children}</AppDataProvider>
-      </body>
+      <body className="min-h-full flex flex-col bg-canvas text-body">{children}</body>
     </html>
   );
 }

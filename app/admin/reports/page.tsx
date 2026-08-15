@@ -1,154 +1,131 @@
-"use client";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { DEFAULT_SLA_HOURS } from "@/lib/sla";
+import { nowMs } from "@/lib/date";
+import { ReportsView, type UnassignedRow, type Assignee } from "./reports-view";
 
-import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
-import { Eyebrow, StatTile } from "@/components/ui/misc";
-import { useAppData } from "@/lib/app-data-context";
-import { homeTimes, categories } from "@/lib/fixtures";
+export const dynamic = "force-dynamic";
 
-const TONE_FILL: Record<string, string> = {
-  default: "bg-graphite",
-  amber: "bg-high-bar",
-  red: "bg-urgent",
-};
+const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
-const TONE_TEXT: Record<string, string> = {
-  default: "text-ink",
-  amber: "text-high",
-  red: "text-urgent",
-};
+function formatDuration(ms: number) {
+  const totalMinutes = Math.round(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
 
-const WIDTH_CLASS: Record<number, string> = {
-  30: "w-[30%]",
-  33: "w-[33%]",
-  38: "w-[38%]",
-  44: "w-[44%]",
-  52: "w-[52%]",
-  64: "w-[64%]",
-  69: "w-[69%]",
-  88: "w-[88%]",
-  100: "w-full",
-};
+function median(values: number[]) {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
 
-export default function ReportsPage() {
-  const { unassigned, assignJob } = useAppData();
+export default async function ReportsPage() {
+  const admin = createAdminClient();
+
+  const [{ data: requests }, { data: settings }, { data: assignees }] = await Promise.all([
+    admin
+      .from("requests")
+      .select(
+        "id, agency_id, home_id, category, priority, status, description, assigned_to, created_at, updated_at, homes(name)"
+      )
+      .returns<
+        {
+          id: string;
+          agency_id: string;
+          home_id: string;
+          category: string;
+          priority: string;
+          status: string;
+          description: string;
+          assigned_to: string | null;
+          created_at: string;
+          updated_at: string;
+          homes: { name: string } | null;
+        }[]
+      >(),
+    admin
+      .from("app_settings")
+      .select("sla_hours")
+      .eq("id", true)
+      .maybeSingle<{ sla_hours: Record<string, number> }>(),
+    admin
+      .from("profiles")
+      .select("id, first_name, last_name, agency_id")
+      .in("role", ["maintenance", "agency_admin"])
+      .returns<Assignee[]>(),
+  ]);
+
+  const rows = requests ?? [];
+  const slaHours = settings?.sla_hours ?? DEFAULT_SLA_HOURS;
+
+  const completed = rows.filter((r) => r.status === "Completed");
+  const durations = completed.map((r) => new Date(r.updated_at).getTime() - new Date(r.created_at).getTime());
+  const medianMs = median(durations);
+
+  const now = nowMs();
+  const urgentCompleted = completed.filter((r) => r.priority === "Urgent");
+  const urgentWithinSla = urgentCompleted.filter(
+    (r) =>
+      new Date(r.updated_at).getTime() - new Date(r.created_at).getTime() <=
+      (slaHours.Urgent ?? DEFAULT_SLA_HOURS.Urgent) * 3600_000
+  ).length;
+  const urgentSlaPct = urgentCompleted.length ? Math.round((urgentWithinSla / urgentCompleted.length) * 100) : null;
+
+  const openOver7Days = rows.filter(
+    (r) => ACTIVE_STATUSES.includes(r.status) && now - new Date(r.created_at).getTime() > 7 * 86400_000
+  );
+  const openOver7HomeCount = new Set(openOver7Days.map((r) => r.home_id)).size;
+
+  const homeDurations: Record<string, { name: string; total: number; count: number }> = {};
+  for (const r of completed) {
+    const name = r.homes?.name ?? "—";
+    if (!homeDurations[r.home_id]) homeDurations[r.home_id] = { name, total: 0, count: 0 };
+    homeDurations[r.home_id].total += new Date(r.updated_at).getTime() - new Date(r.created_at).getTime();
+    homeDurations[r.home_id].count += 1;
+  }
+  const homeAverages = Object.values(homeDurations).map((h) => ({ home: h.name, avgMs: h.total / h.count }));
+  const maxHomeAvg = Math.max(1, ...homeAverages.map((h) => h.avgMs));
+  const homeTimes = homeAverages
+    .sort((a, b) => b.avgMs - a.avgMs)
+    .map((h) => ({
+      home: h.home,
+      pct: Math.round((h.avgMs / maxHomeAvg) * 100),
+      value: formatDuration(h.avgMs),
+      tone: h.avgMs > 48 * 3600_000 ? ("red" as const) : h.avgMs > 24 * 3600_000 ? ("amber" as const) : ("default" as const),
+    }));
+
+  const categoryCounts: Record<string, number> = {};
+  for (const r of rows) categoryCounts[r.category] = (categoryCounts[r.category] ?? 0) + 1;
+  const maxCategoryCount = Math.max(1, ...Object.values(categoryCounts));
+  const categories = Object.entries(categoryCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([category, value]) => ({ category, value, pct: Math.round((value / maxCategoryCount) * 100) }));
+
+  const unassigned: UnassignedRow[] = rows
+    .filter((r) => !r.assigned_to && ACTIVE_STATUSES.includes(r.status))
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    .map((r) => ({
+      id: r.id,
+      agencyId: r.agency_id,
+      title: r.description.split("\n")[0],
+      home: r.homes?.name ?? "—",
+      created_at: r.created_at,
+      waitLong: now - new Date(r.created_at).getTime() > 24 * 3600_000,
+    }));
 
   return (
-    <div className="flex flex-1 flex-col overflow-auto">
-      <PageHeader
-        title="Reports"
-        subtitle="Response times and workload across all homes"
-        actions={
-          <>
-            <div className="flex h-8 items-center rounded-md border border-black/[.14] px-3 text-[12.5px] text-muted">
-              Last 30 days ▾
-            </div>
-            <Button>Export history</Button>
-          </>
-        }
-      />
-      <div className="flex flex-1 flex-col gap-5 bg-canvas p-4 sm:p-7">
-        <div className="flex flex-wrap gap-3">
-          <StatTile label="Requests raised" value={412} context="+8% vs prev." />
-          <StatTile
-            label="Median response"
-            value="3h 48m"
-            mono
-            context="−41m vs prev."
-          />
-          <StatTile label="Urgent within 4h" value="91%" context="target 95%" />
-          <StatTile
-            label="Open over 7 days"
-            value={14}
-            valueClassName="text-urgent"
-            context="across 6 homes"
-          />
-        </div>
-
-        <div className="flex flex-col gap-4 lg:flex-row">
-          <div className="flex flex-1 flex-col gap-4 rounded-lg border border-black/[.09] bg-surface p-5">
-            <Eyebrow>Median response time by home</Eyebrow>
-            <div className="flex flex-col gap-3">
-              {homeTimes.map((h) => (
-                <div key={h.home} className="flex items-center gap-3">
-                  <span className="w-[110px] flex-none truncate text-[12.5px] text-body">
-                    {h.home}
-                  </span>
-                  <div className="h-4 flex-1 overflow-hidden rounded-full bg-selected">
-                    <div
-                      className={`h-full rounded-full ${TONE_FILL[h.tone]} ${WIDTH_CLASS[h.pct]}`}
-                    />
-                  </div>
-                  <span className={`w-14 flex-none text-right font-mono text-[11.5px] ${TONE_TEXT[h.tone]}`}>
-                    {h.value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-1 flex-col gap-4 rounded-lg border border-black/[.09] bg-surface p-5">
-            <Eyebrow>Requests by category</Eyebrow>
-            <div className="flex flex-col gap-3">
-              {categories.map((c) => (
-                <div key={c.category} className="flex items-center gap-3">
-                  <span className="w-[140px] flex-none truncate text-[12.5px] text-body">
-                    {c.category}
-                  </span>
-                  <div className="h-[10px] flex-1 overflow-hidden rounded-full bg-selected">
-                    <div
-                      className={`h-full rounded-full bg-graphite ${WIDTH_CLASS[c.pct]}`}
-                    />
-                  </div>
-                  <span className="w-8 flex-none text-right font-mono text-[11.5px] text-eyebrow">
-                    {c.value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3 rounded-lg border border-black/[.09] bg-surface p-5">
-          <div className="flex items-center justify-between">
-            <Eyebrow>Unassigned — needs a manual assignment</Eyebrow>
-            <span className="font-mono text-[11.5px] text-eyebrow">
-              {unassigned.length} waiting
-            </span>
-          </div>
-          <div className="flex flex-col gap-2">
-            {unassigned.map((u) => (
-              <div
-                key={u.ref}
-                className="grid grid-cols-[90px_minmax(180px,1fr)_150px_100px_220px] items-center gap-3 overflow-x-auto rounded-md border border-black/[.08] px-4 py-3"
-              >
-                <span className="font-mono text-xs font-medium text-faint">{u.ref}</span>
-                <span className="truncate text-[13px] font-medium text-ink">{u.title}</span>
-                <span className="text-[13px] text-subtle">{u.home}</span>
-                <span className={`font-mono text-xs ${u.waitLong ? "text-urgent" : "text-meta"}`}>
-                  {u.waiting}
-                </span>
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 flex-1 items-center rounded-md border border-black/[.14] px-2 text-xs text-muted">
-                    {u.suggest}
-                  </div>
-                  <button
-                    onClick={() => assignJob(u.ref, u.suggest)}
-                    className="rounded-md bg-graphite px-3 py-[7px] text-xs font-medium text-white hover:bg-graphite-hover"
-                  >
-                    Assign
-                  </button>
-                </div>
-              </div>
-            ))}
-            {unassigned.length === 0 && (
-              <span className="py-2 text-sm text-meta">
-                All requests are assigned.
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+    <ReportsView
+      totalRequests={rows.length}
+      medianResponse={medianMs !== null ? formatDuration(medianMs) : "—"}
+      urgentSlaPct={urgentSlaPct}
+      openOver7Days={openOver7Days.length}
+      openOver7HomeCount={openOver7HomeCount}
+      homeTimes={homeTimes}
+      categories={categories}
+      unassigned={unassigned}
+      assignees={assignees ?? []}
+    />
   );
 }

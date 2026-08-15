@@ -1,86 +1,66 @@
-"use client";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getHomes } from "@/app/actions/homes";
+import { MyRequestsTable, type StaffRequestRow } from "./requests-table";
 
-import Link from "next/link";
-import { PageHeader } from "@/components/page-header";
-import { buttonClasses } from "@/components/ui/button";
-import { TextField } from "@/components/ui/inputs";
-import { StatTile } from "@/components/ui/misc";
-import { PriorityBadge, UnreadDot } from "@/components/ui/badges";
-import { tableWrapClass, tableHeadRowClass, tableRowClass } from "@/components/ui/table";
-import { useAppData } from "@/lib/app-data-context";
+export default async function MyRequestsPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-const GRID_COLS = "grid-cols-[104px_minmax(280px,1fr)_150px_130px_118px_132px]";
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("home_id")
+    .eq("id", user!.id)
+    .maybeSingle<{ home_id: string | null }>();
 
-export default function MyRequestsPage() {
-  const { myRequests } = useAppData();
+  const homeId = profile?.home_id ?? null;
+  const homes = await getHomes();
+  const home = homes.find((h) => h.id === homeId);
 
-  const awaiting = myRequests.filter((r) => r.status === "Open").length;
-  const inProgress = myRequests.filter(
-    (r) => r.status === "In progress" || r.status === "Accepted"
-  ).length;
-  const urgentOpen = myRequests.filter(
-    (r) => r.priority === "Urgent" && r.status !== "Completed"
-  ).length;
+  const admin = createAdminClient();
+
+  const { data: requests } = homeId
+    ? await admin
+        .from("requests")
+        .select("id, category, priority, status, description, created_at, updated_at")
+        .eq("home_id", homeId)
+        .order("created_at", { ascending: false })
+        .returns<Omit<StaffRequestRow, "photoCount">[]>()
+    : { data: [] };
+
+  const rows = requests ?? [];
+  const ids = rows.map((r) => r.id);
+
+  const { data: photos } = ids.length
+    ? await admin.from("request_photos").select("request_id").in("request_id", ids)
+    : { data: [] };
+
+  const photoCounts: Record<string, number> = {};
+  for (const p of photos ?? []) {
+    photoCounts[p.request_id] = (photoCounts[p.request_id] ?? 0) + 1;
+  }
+
+  const withPhotos: StaffRequestRow[] = rows.map((r) => ({
+    ...r,
+    photoCount: photoCounts[r.id] ?? 0,
+  }));
+
+  const completed = rows.filter((r) => r.status === "Completed");
+  const avgResponseMs =
+    completed.length > 0
+      ? completed.reduce(
+          (sum, r) => sum + (new Date(r.updated_at).getTime() - new Date(r.created_at).getTime()),
+          0
+        ) / completed.length
+      : null;
 
   return (
-    <>
-      <PageHeader
-        title="My requests"
-        subtitle="Willow House · 24 residents"
-        actions={
-          <>
-            <TextField placeholder="Search reference or room…" className="w-full sm:w-[250px]" />
-            <Link href="/staff/new" className={buttonClasses("primary")}>
-              New request
-            </Link>
-          </>
-        }
-      />
-      <div className="flex flex-1 flex-col gap-4 overflow-auto bg-canvas p-4 sm:p-7">
-        <div className="flex flex-wrap gap-3">
-          <StatTile label="Awaiting acceptance" value={awaiting} />
-          <StatTile label="In progress" value={inProgress} />
-          <StatTile label="Urgent open" value={urgentOpen} valueClassName="text-urgent" />
-          <StatTile label="Avg. response" value="4h 12m" mono />
-        </div>
-
-        <div className={tableWrapClass}>
-          <div className={`${tableHeadRowClass} ${GRID_COLS}`}>
-            <span>Ref</span>
-            <span>Issue</span>
-            <span>Location</span>
-            <span>Category</span>
-            <span>Priority</span>
-            <span>Status</span>
-          </div>
-          {myRequests.map((r) => (
-            <div
-              key={r.ref}
-              className={`${tableRowClass} ${GRID_COLS}`}
-            >
-              <span className="font-mono text-xs font-medium text-faint">{r.ref}</span>
-              <div className="flex min-w-0 items-center gap-2 pr-4">
-                <span className="truncate text-[13.5px] font-medium text-ink">
-                  {r.title}
-                </span>
-                {r.photos > 0 && (
-                  <span className="flex-none rounded border border-black/[.12] px-[5px] py-[3px] font-mono text-[10.5px] text-meta">
-                    {r.photos} photo{r.photos > 1 ? "s" : ""}
-                  </span>
-                )}
-                {r.unread && <UnreadDot />}
-              </div>
-              <span className="text-[13px] text-subtle">{r.location}</span>
-              <span className="text-[13px] text-subtle">{r.category}</span>
-              <PriorityBadge priority={r.priority} />
-              <div className="flex flex-col gap-[3px]">
-                <span className="text-[12.5px] font-medium text-ink">{r.status}</span>
-                <span className="font-mono text-[11px] text-eyebrow">{r.when}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
+    <MyRequestsTable
+      requests={withPhotos}
+      homeName={home?.name ?? "No home assigned"}
+      avgResponseMs={avgResponseMs}
+    />
   );
 }

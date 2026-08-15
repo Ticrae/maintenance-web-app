@@ -1,154 +1,101 @@
-"use client";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getHomes } from "@/app/actions/homes";
+import { NotificationsList, type NotifItem } from "./notifications-list";
 
-import { useState } from "react";
-import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
-import { Eyebrow } from "@/components/ui/misc";
-import { NotifTagBadge } from "@/components/ui/badges";
-import { Toggle } from "@/components/ui/inputs";
-import { useAppData } from "@/lib/app-data-context";
-import type { NotifTag } from "@/lib/theme";
+function dayLabel(date: Date) {
+  const today = new Date();
+  const yesterday = new Date(today.getTime() - 86400_000);
+  if (date.toDateString() === today.toDateString()) return "Today";
+  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
-const FILTERS: { key: string; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "unread", label: "Unread" },
-  { key: "status", label: "Status changes" },
-  { key: "comment", label: "Comments" },
-  { key: "urgent", label: "Urgent" },
-];
+function firstLine(text: string) {
+  return text.split("\n")[0];
+}
 
-export default function NotificationsPage() {
-  const { notifGroups, notifPrefs, markAllRead, toggleNotifPref } = useAppData();
-  const [filter, setFilter] = useState("all");
+export default async function NotificationsPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const allItems = notifGroups.flatMap((g) => g.items);
-  const unreadTotal = allItems.filter((i) => i.unread).length;
-  const counts: Record<string, number> = {
-    all: allItems.length,
-    unread: unreadTotal,
-    status: allItems.filter((i) => i.tag === "status").length,
-    comment: allItems.filter((i) => i.tag === "comment").length,
-    urgent: allItems.filter((i) => i.tag === "urgent").length,
-  };
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("home_id")
+    .eq("id", user!.id)
+    .maybeSingle<{ home_id: string | null }>();
 
-  function matches(tag: NotifTag, unread: boolean) {
-    if (filter === "all") return true;
-    if (filter === "unread") return unread;
-    return tag === filter;
+  const homeId = profile?.home_id ?? null;
+  const homes = await getHomes();
+  const home = homes.find((h) => h.id === homeId);
+
+  const admin = createAdminClient();
+
+  const { data: requests } = homeId
+    ? await admin
+        .from("requests")
+        .select("id, description, priority, status, created_at, updated_at")
+        .eq("home_id", homeId)
+        .order("updated_at", { ascending: false })
+        .limit(50)
+    : { data: [] };
+
+  const rows = requests ?? [];
+  const ids = rows.map((r) => r.id);
+
+  const { data: comments } = ids.length
+    ? await admin
+        .from("request_comments")
+        .select("id, request_id, message, created_at, profiles(first_name, last_name)")
+        .in("request_id", ids)
+        .order("created_at", { ascending: false })
+        .limit(50)
+        .returns<
+          {
+            id: string;
+            request_id: string;
+            message: string;
+            created_at: string;
+            profiles: { first_name: string | null; last_name: string | null } | null;
+          }[]
+        >()
+    : { data: [] };
+
+  const requestById = Object.fromEntries(rows.map((r) => [r.id, r]));
+
+  const items: NotifItem[] = [];
+
+  for (const c of comments ?? []) {
+    const request = requestById[c.request_id];
+    if (!request) continue;
+    const author = [c.profiles?.first_name, c.profiles?.last_name].filter(Boolean).join(" ") || "Someone";
+    items.push({
+      id: `comment-${c.id}`,
+      tag: request.priority === "Urgent" ? "urgent" : "comment",
+      title: `New comment on "${firstLine(request.description)}"`,
+      body: c.message,
+      meta: `${author} · ${dayLabel(new Date(c.created_at))}`,
+      timestamp: c.created_at,
+      day: dayLabel(new Date(c.created_at)),
+    });
   }
 
-  return (
-    <>
-      <PageHeader
-        title="Notifications"
-        subtitle={`${unreadTotal} unread · Willow House`}
-        actions={
-          <Button variant="outline" onClick={markAllRead}>
-            Mark all as read
-          </Button>
-        }
-      />
-      <div className="flex flex-1 flex-col gap-6 overflow-auto bg-canvas p-4 lg:flex-row lg:p-7">
-        <div className="flex flex-1 flex-col gap-5">
-          <div className="flex flex-wrap gap-2">
-            {FILTERS.map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setFilter(f.key)}
-                className={`rounded-md px-[10px] py-[6px] text-xs ${
-                  filter === f.key
-                    ? "bg-graphite text-white"
-                    : "bg-chip text-body hover:bg-hover"
-                }`}
-              >
-                {f.label} · {counts[f.key]}
-              </button>
-            ))}
-          </div>
+  for (const r of rows) {
+    if (r.status === "Open") continue;
+    items.push({
+      id: `status-${r.id}`,
+      tag: r.priority === "Urgent" ? "urgent" : "status",
+      title: `"${firstLine(r.description)}" is now ${r.status}`,
+      body: "",
+      meta: dayLabel(new Date(r.updated_at)),
+      timestamp: r.updated_at,
+      day: dayLabel(new Date(r.updated_at)),
+    });
+  }
 
-          {notifGroups.map((group) => {
-            const items = group.items.filter((i) => matches(i.tag, i.unread));
-            if (!items.length) return null;
-            return (
-              <div key={group.day} className="flex flex-col gap-2">
-                <Eyebrow>{group.day}</Eyebrow>
-                <div className="flex flex-col gap-2">
-                  {items.map((n) => (
-                    <div
-                      key={n.id}
-                      className={`flex items-start gap-3 rounded-lg border border-black/[.09] px-4 py-[14px] ${
-                        n.unread ? "bg-[#f7f9fe]" : "bg-surface"
-                      }`}
-                    >
-                      <span
-                        className={`mt-[5px] h-[7px] w-[7px] flex-none rounded-full ${
-                          n.unread ? "bg-link" : "bg-transparent"
-                        }`}
-                      />
-                      <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[13.5px] font-medium text-ink">
-                            {n.title}
-                          </span>
-                          <NotifTagBadge tag={n.tag} />
-                        </div>
-                        <span className="text-[13px] leading-[1.5] text-body">
-                          {n.body}
-                        </span>
-                        <span className="font-mono text-[11px] text-eyebrow">
-                          {n.meta}
-                        </span>
-                      </div>
-                      <Button variant="outline" className="flex-none">
-                        View
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+  items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-        <div className="flex w-full flex-none flex-col gap-4 lg:w-[310px]">
-          <div className="flex flex-col gap-3 rounded-lg border border-black/[.09] bg-surface p-5">
-            <Eyebrow>Notify me about</Eyebrow>
-            <div className="flex flex-col gap-4">
-              {notifPrefs.map((p) => (
-                <div key={p.id} className="flex items-start justify-between gap-3">
-                  <div className="flex flex-col gap-[2px]">
-                    <span className="text-[13px] font-medium text-ink">
-                      {p.label}
-                    </span>
-                    <span className="text-[11.5px] leading-[1.4] text-meta">
-                      {p.hint}
-                    </span>
-                  </div>
-                  <Toggle on={p.on} onChange={() => toggleNotifPref(p.id)} />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-col gap-3 rounded-lg border border-black/[.09] bg-surface p-5">
-            <Eyebrow>Delivery</Eyebrow>
-            <div className="flex gap-2">
-              <span className="rounded-full bg-graphite px-[10px] py-[5px] text-xs text-white">
-                In app
-              </span>
-              <span className="rounded-full bg-graphite px-[10px] py-[5px] text-xs text-white">
-                Email
-              </span>
-              <span className="rounded-full border border-black/[.14] px-[10px] py-[5px] text-xs text-muted">
-                SMS
-              </span>
-            </div>
-            <span className="text-[11.5px] leading-[1.45] text-meta">
-              Urgent updates always come through in app, even when email is
-              off.
-            </span>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+  return <NotificationsList items={items} homeName={home?.name ?? "your home"} />;
 }

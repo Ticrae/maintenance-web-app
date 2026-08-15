@@ -1,70 +1,74 @@
-"use client";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getHomes } from "@/app/actions/homes";
+import { nowMs } from "@/lib/date";
+import { StaffSidebar } from "./staff-sidebar";
 
-import { usePathname } from "next/navigation";
-import {
-  SidebarShell,
-  SidebarLogo,
-  SidebarNavItem,
-  SidebarNavGroup,
-  SidebarSectionLabel,
-  SidebarUserFooter,
-} from "@/components/sidebar";
-import { useAppData } from "@/lib/app-data-context";
-import { currentUser } from "@/lib/fixtures";
-import { SignOutButton } from "@/components/sign-out-button";
+export default async function StaffLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-export default function StaffLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const { myRequests, notifGroups } = useAppData();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("first_name, home_id")
+    .eq("id", user!.id)
+    .maybeSingle<{ first_name: string | null; home_id: string | null }>();
 
-  const unreadCount = notifGroups.reduce(
-    (n, g) => n + g.items.filter((i) => i.unread).length,
-    0
-  );
-  const openCount = myRequests.filter((r) => r.status === "Open").length;
-  const inProgressCount = myRequests.filter(
-    (r) => r.status === "In progress" || r.status === "Accepted"
+  const homeId = profile?.home_id ?? null;
+  const homes = await getHomes();
+  const home = homes.find((h) => h.id === homeId);
+
+  const admin = createAdminClient();
+  const { data: requests } = homeId
+    ? await admin.from("requests").select("id, status").eq("home_id", homeId)
+    : { data: [] };
+
+  const rows = requests ?? [];
+  const openCount = rows.filter((r) => r.status === "Open").length;
+  const inProgressCount = rows.filter(
+    (r) =>
+      r.status === "Assigned" ||
+      r.status === "In Progress" ||
+      r.status === "Waiting for Parts",
   ).length;
-  const completedCount = myRequests.filter((r) => r.status === "Completed").length;
+  const completedCount = rows.filter((r) => r.status === "Completed").length;
+
+  const dayAgo = new Date(nowMs() - 24 * 3600_000).toISOString();
+  const requestIds = rows.map((r) => r.id);
+  const { count: recentComments } = requestIds.length
+    ? await admin
+        .from("request_comments")
+        .select("id", { count: "exact", head: true })
+        .in("request_id", requestIds)
+        .gte("created_at", dayAgo)
+    : { count: 0 };
+
+  const name = profile?.first_name || "You";
 
   return (
     <div className="flex min-h-screen w-full md:h-screen">
-      <SidebarShell width={230}>
-        <SidebarLogo />
-        <SidebarNavGroup>
-          <SidebarNavItem
-            href="/staff"
-            label="My requests"
-            count={myRequests.length}
-            active={pathname === "/staff"}
-          />
-          <SidebarNavItem label="Home activity" disabled />
-          <SidebarNavItem
-            href="/staff/notifications"
-            label="Notifications"
-            badge={unreadCount || undefined}
-            active={pathname === "/staff/notifications"}
-          />
-        </SidebarNavGroup>
-        <SidebarSectionLabel>Filter</SidebarSectionLabel>
-        <div className="flex flex-col gap-[2px] px-3">
-          <div className="rounded-md bg-hover px-3 py-2 text-[13px] text-muted">
-            Open · {openCount}
-          </div>
-          <div className="rounded-md px-3 py-2 text-[13px] text-muted">
-            In progress · {inProgressCount}
-          </div>
-          <div className="rounded-md px-3 py-2 text-[13px] text-muted">
-            Completed · {completedCount}
-          </div>
-        </div>
-        <SidebarUserFooter
-          initials={currentUser.staff.initials}
-          name={currentUser.staff.name}
-          subtitle={currentUser.staff.subtitle}
-          actions={<SignOutButton />}
-        />
-      </SidebarShell>
+      <StaffSidebar
+        totalRequests={rows.length}
+        openCount={openCount}
+        inProgressCount={inProgressCount}
+        completedCount={completedCount}
+        recentActivityCount={recentComments ?? 0}
+        name={name}
+        subtitle={home?.name ?? "No home assigned"}
+        initials={
+          name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .slice(0, 2) || "?"
+        }
+      />
       <div className="flex min-w-0 flex-1 flex-col">{children}</div>
     </div>
   );

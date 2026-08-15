@@ -5,8 +5,12 @@ import { PageHeader } from "@/components/page-header";
 import { StatTile } from "@/components/ui/misc";
 import { PriorityBadge } from "@/components/ui/badges";
 import { TextField, Select } from "@/components/ui/inputs";
-import { tableWrapClass, tableHeadRowClass, tableRowClass } from "@/components/ui/table";
-import { formatDate } from "@/lib/date";
+import {
+  tableWrapClass,
+  tableHeadRowClass,
+  tableRowClass,
+} from "@/components/ui/table";
+import { relativeTime } from "@/lib/date";
 import type { Priority } from "@/lib/theme";
 import {
   updateRequestStatus,
@@ -46,7 +50,8 @@ const STATUSES: RequestStatus[] = [
   "Cancelled",
 ];
 const PRIORITIES: Priority[] = ["Urgent", "High", "Medium", "Low"];
-const GRID_COLS = "grid-cols-[84px_minmax(220px,1fr)_140px_110px_90px_140px_160px_130px_100px]";
+const GRID_COLS =
+  "grid-cols-[84px_minmax(220px,1fr)_140px_110px_90px_140px_160px_130px_100px]";
 
 function assigneeName(a: Assignee) {
   return [a.first_name, a.last_name].filter(Boolean).join(" ") || "Unnamed";
@@ -62,7 +67,9 @@ export function RequestsTable({
   assignees: Assignee[];
 }) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<RequestStatus | "All">("All");
+  const [statusFilter, setStatusFilter] = useState<RequestStatus | "All">(
+    "All",
+  );
   const [priorityFilter, setPriorityFilter] = useState<Priority | "All">("All");
   const [, startTransition] = useTransition();
 
@@ -70,7 +77,8 @@ export function RequestsTable({
     const q = search.trim().toLowerCase();
     return requests.filter((r) => {
       if (statusFilter !== "All" && r.status !== statusFilter) return false;
-      if (priorityFilter !== "All" && r.priority !== priorityFilter) return false;
+      if (priorityFilter !== "All" && r.priority !== priorityFilter)
+        return false;
       if (
         q &&
         !r.description.toLowerCase().includes(q) &&
@@ -83,7 +91,7 @@ export function RequestsTable({
 
   const openCount = requests.filter((r) => r.status === "Open").length;
   const urgentOpen = requests.filter(
-    (r) => r.priority === "Urgent" && r.status !== "Completed" && r.status !== "Cancelled"
+    (r) => r.priority === "Urgent" && r.status !== "Completed" && r.status !== "Cancelled",
   ).length;
   const unassigned = requests.filter((r) => !r.assigned_to).length;
 
@@ -92,13 +100,24 @@ export function RequestsTable({
       <PageHeader
         title="Requests"
         subtitle="Every maintenance request across all homes"
-        actions={<TextField placeholder="Search description or home…" className="w-full sm:w-[260px]" value={search} onChange={(e) => setSearch(e.target.value)} />}
+        actions={
+          <TextField
+            placeholder="Search description or home…"
+            className="w-full sm:w-[260px]"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        }
       />
       <div className="flex flex-1 flex-col gap-4 bg-canvas p-4 sm:p-7">
         <div className="flex gap-3">
           <StatTile label="Total requests" value={requests.length} />
           <StatTile label="Open" value={openCount} />
-          <StatTile label="Urgent open" value={urgentOpen} valueClassName="text-urgent" />
+          <StatTile
+            label="Urgent open"
+            value={urgentOpen}
+            valueClassName="text-urgent"
+          />
           <StatTile label="Unassigned" value={unassigned} />
         </div>
 
@@ -148,7 +167,9 @@ export function RequestsTable({
             <span>Created</span>
           </div>
           {filtered.map((r) => {
-            const eligible = assignees.filter((a) => a.agency_id === r.agency_id);
+            const eligible = assignees.filter(
+              (a) => a.agency_id === r.agency_id,
+            );
             return (
               <div key={r.id} className={`${tableRowClass} ${GRID_COLS}`}>
                 <span className="font-mono text-xs font-medium text-faint">
@@ -158,12 +179,16 @@ export function RequestsTable({
                   {r.description}
                 </span>
                 <div className="flex flex-col gap-[2px] pr-3">
-                  <span className="truncate text-[13px] text-subtle">{r.homes?.name ?? "—"}</span>
+                  <span className="truncate text-[13px] text-subtle">
+                    {r.homes?.name ?? "—"}
+                  </span>
                   <span className="truncate font-mono text-[10.5px] text-eyebrow">
                     {r.agencies?.name ?? ""}
                   </span>
                 </div>
-                <span className="truncate pr-3 text-[13px] text-subtle">{r.category}</span>
+                <span className="truncate pr-3 text-[13px] text-subtle">
+                  {r.category}
+                </span>
                 <PriorityBadge priority={r.priority} />
                 <Select
                   value={r.status}
@@ -202,13 +227,15 @@ export function RequestsTable({
                   {profileMap[r.reported_by] ?? "—"}
                 </span>
                 <span className="font-mono text-[11px] text-eyebrow">
-                  {formatDate(r.created_at)}
+                  {relativeTime(r.created_at)}
                 </span>
               </div>
             );
           })}
           {filtered.length === 0 && (
-            <div className="px-4 py-8 text-center text-sm text-meta">No requests match.</div>
+            <div className="px-4 py-8 text-center text-sm text-meta">
+              No requests match.
+            </div>
           )}
         </div>
       </div>

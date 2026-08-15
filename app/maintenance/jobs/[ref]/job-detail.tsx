@@ -1,79 +1,124 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PhotoPlaceholder, AddPhotoTile, Stepper } from "@/components/ui/misc";
-import { Avatar, Eyebrow } from "@/components/ui/misc";
+import { AddPhotoTile, Stepper, Avatar, Eyebrow } from "@/components/ui/misc";
 import { UrgentTag } from "@/components/ui/badges";
 import { Button, buttonClasses } from "@/components/ui/button";
-import { TextArea } from "@/components/ui/inputs";
-import { useAppData } from "@/lib/app-data-context";
-import type { QueueJob, MyJob } from "@/lib/fixtures";
+import { TextArea, Select } from "@/components/ui/inputs";
+import { relativeTime } from "@/lib/date";
+import {
+  completeJob,
+  updateJobStage,
+  type RequestStatus,
+} from "@/app/actions/requests";
+import { addRequestComment } from "@/app/actions/comments";
+import { uploadRequestPhoto } from "@/app/actions/photos";
+import type { Priority } from "@/lib/theme";
 
-type JobSummary = {
-  ref: string;
-  title: string;
-  meta: string;
-  priority: QueueJob["priority"];
-  urgent: boolean;
-  stepIndex: number;
+export type JobDetailData = {
+  id: string;
+  category: string;
+  priority: Priority;
+  status: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  homeName: string;
+  homeAddress: string | null;
+  reporterName: string;
 };
 
-function findJob(
-  refParam: string,
-  queue: QueueJob[],
-  myJobGroups: { items: MyJob[] }[]
-): JobSummary | null {
-  const inQueue = queue.find((j) => j.ref === refParam);
-  if (inQueue) {
-    return {
-      ref: inQueue.ref,
-      title: inQueue.title,
-      meta: inQueue.meta,
-      priority: inQueue.priority,
-      urgent: inQueue.urgent,
-      stepIndex: inQueue.action === "Accept" ? 0 : 1,
-    };
-  }
-  for (const g of myJobGroups) {
-    const found = g.items.find((j) => j.ref === refParam);
-    if (found) {
-      return {
-        ref: found.ref,
-        title: found.title,
-        meta: found.meta,
-        priority: found.priority,
-        urgent: found.urgent,
-        stepIndex: found.stage === "site" ? 2 : found.stage === "parts" ? 3 : 1,
-      };
+export type CommentItem = {
+  id: string;
+  message: string;
+  created_at: string;
+  authorName: string;
+};
+export type PhotoItem = { id: string; url: string; created_at: string };
+
+const STATUS_OPTIONS: RequestStatus[] = [
+  "Assigned",
+  "In Progress",
+  "Waiting for Parts",
+  "Completed",
+  "Cancelled",
+];
+
+const STEP_INDEX: Record<string, number> = {
+  Open: 0,
+  Assigned: 1,
+  "In Progress": 2,
+  "Waiting for Parts": 3,
+  Completed: 4,
+  Cancelled: 4,
+};
+
+export function JobDetail({
+  job,
+  activity,
+  photos,
+}: {
+  job: JobDetailData;
+  activity: CommentItem[];
+  photos: PhotoItem[];
+}) {
+  const router = useRouter();
+  const [comment, setComment] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [title, ...rest] = job.description.split("\n");
+  const details = rest.join("\n");
+
+  async function handleStatusChange(status: RequestStatus) {
+    setBusy(true);
+    setError(null);
+    try {
+      if (status === "Completed") {
+        await completeJob(job.id);
+        router.push("/maintenance/completed");
+        return;
+      }
+      await updateJobStage(job.id, status);
+      setBusy(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not update this job.");
+      setBusy(false);
     }
   }
-  return null;
-}
 
-export function JobDetail({ refParam }: { refParam: string }) {
-  const router = useRouter();
-  const { queue, myJobGroups, activity, addComment, markJobCompleted, setJobStage } =
-    useAppData();
-  const [comment, setComment] = useState("");
-
-  const job = findJob(refParam, queue, myJobGroups);
-
-  if (!job) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-canvas">
-        <span className="text-sm text-meta">No job found for {refParam}.</span>
-        <button
-          onClick={() => router.push("/maintenance")}
-          className={buttonClasses("outline")}
-        >
-          Back to queue
-        </button>
-      </div>
-    );
+  async function handleComment() {
+    if (!comment.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await addRequestComment(job.id, comment.trim());
+      setComment("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not post comment.");
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const [home, room] = job.meta.split(" · ");
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.set("photo", file);
+      await uploadRequestPhoto(job.id, formData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not upload photo.");
+    } finally {
+      setBusy(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   return (
     <div className="flex flex-1 flex-col">
@@ -81,76 +126,142 @@ export function JobDetail({ refParam }: { refParam: string }) {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-[10px]">
             <span className="font-mono text-[12.5px] font-medium text-faint">
-              {job.ref}
+              {job.id.slice(0, 8).toUpperCase()}
             </span>
             <span className="text-lg font-semibold tracking-[-.01em] text-ink">
-              {job.title}
+              {title}
             </span>
-            {job.urgent && <UrgentTag />}
+            {job.priority === "Urgent" && <UrgentTag />}
           </div>
           <span className="font-mono text-xs text-meta">
-            {home} · {room} · raised by Deborah Amos, 08:14 today
+            {job.homeName} · raised by {job.reporterName} ·{" "}
+            {relativeTime(job.created_at)}
           </span>
         </div>
         <div className="ml-auto flex gap-[10px]">
-          <Button variant="outline">Reassign</Button>
-          <Button
-            onClick={() => {
-              markJobCompleted(job.ref);
-              router.push("/maintenance/completed");
-            }}
-          >
-            Mark completed
-          </Button>
+          {job.status !== "Completed" && job.status !== "Cancelled" && (
+            <Button
+              onClick={() => handleStatusChange("Completed")}
+              disabled={busy}
+            >
+              Mark completed
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         <div className="flex flex-1 flex-col gap-4 overflow-auto bg-canvas p-6">
+          {error && (
+            <p className="text-sm text-red-700" role="alert">
+              {error}
+            </p>
+          )}
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
             <div className="flex items-center justify-between">
               <Eyebrow>Progress</Eyebrow>
               <span className="font-mono text-[11.5px] text-eyebrow">
-                accepted 08:31 · target today 18:00
+                {job.status} · updated {relativeTime(job.updated_at)}
               </span>
             </div>
-            <Stepper activeIndex={job.stepIndex} />
+            <Stepper activeIndex={STEP_INDEX[job.status] ?? 0} />
           </div>
 
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
             <Eyebrow>Reported issue</Eyebrow>
             <p className="max-w-[62ch] text-sm leading-[1.6] text-body">
-              Cold to the touch even with the valve fully open. Resident has
-              been moved to the day room this afternoon. Second radiator on
-              the same wall is fine.
+              {details || title}
             </p>
-            <div className="flex gap-[10px]">
-              <PhotoPlaceholder caption="reported · radiator" className="h-24 w-[132px]" />
-              <PhotoPlaceholder caption="reported · valve" className="h-24 w-[132px]" />
-            </div>
+            <span className="font-mono text-[11.5px] text-eyebrow">
+              {job.category}
+            </span>
           </div>
 
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
             <div className="flex items-center justify-between">
-              <Eyebrow>Completion evidence</Eyebrow>
-              <span className="text-[11.5px] text-meta">
-                required before completing
-              </span>
+              <Eyebrow>Photos</Eyebrow>
+              {job.status !== "Completed" && job.status !== "Cancelled" && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[12px] text-meta">Set status</span>
+                  <Select
+                    value={job.status}
+                    disabled={busy}
+                    className="h-8 text-xs"
+                    onChange={(e) =>
+                      handleStatusChange(e.target.value as RequestStatus)
+                    }
+                  >
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
             </div>
-            <div className="flex gap-[10px]">
-              <PhotoPlaceholder caption="after · bled valve" className="h-24 w-[132px]" />
-              <AddPhotoTile label="Upload" hint="after photo" className="h-24 w-[132px]" />
+            <div className="flex flex-wrap gap-[10px]">
+              {photos.map((p) => (
+                <a key={p.id} href={p.url} target="_blank" rel="noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.url}
+                    alt=""
+                    className="h-24 w-[132px] rounded-md border border-black/[.1] object-cover"
+                  />
+                </a>
+              ))}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={busy}
+              >
+                <AddPhotoTile
+                  label="Upload"
+                  hint="add photo"
+                  className="h-24 w-[132px]"
+                />
+              </button>
             </div>
-            <div className="rounded-md border border-black/[.14] px-3 py-[11px] text-[13.5px] leading-[1.55] text-body">
-              Bled the radiator and reseated the TRV head — heat restored to
-              about 80%. Valve body is weeping slightly; ordered a
-              replacement head, fitting Thursday.
-            </div>
-            <div className="flex gap-[9px]">
-              <Button variant="outline">Save note</Button>
-              <Button variant="outline" onClick={() => setJobStage(job.ref, "parts")}>
-                Set status: parts ordered
-              </Button>
+          </div>
+          <div>
+            <Eyebrow>Comments</Eyebrow>
+            <div className="flex flex-col gap-[18px]">
+              {activity.map((a) => (
+                <div key={a.id} className="flex gap-[11px]">
+                  <Avatar
+                    initials={a.authorName
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .slice(0, 2)}
+                    size={28}
+                  />
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <div className="flex items-baseline gap-[7px]">
+                      <span className="text-[12.5px] font-medium text-ink">
+                        {a.authorName}
+                      </span>
+                      <span className="font-mono text-[11px] text-eyebrow">
+                        {relativeTime(a.created_at)}
+                      </span>
+                    </div>
+                    <span className="text-[13px] leading-[1.55] text-muted">
+                      {a.message}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {activity.length === 0 && (
+                <span className="text-sm text-meta">No comments yet.</span>
+              )}
             </div>
           </div>
         </div>
@@ -158,23 +269,36 @@ export function JobDetail({ refParam }: { refParam: string }) {
         <div className="flex w-[390px] flex-none flex-col border-l border-black/[.08]">
           <div className="flex items-center justify-between border-b border-black/[.07] px-[22px] py-4">
             <span className="text-[13px] font-semibold text-ink">Activity</span>
-            <span className="font-mono text-[11.5px] text-eyebrow">
-              shared with the home
-            </span>
           </div>
           <div className="flex flex-1 flex-col gap-[18px] overflow-auto px-[22px] py-[18px]">
             {activity.map((a) => (
               <div key={a.id} className="flex gap-[11px]">
-                <Avatar initials={a.initials} size={28} />
+                <Avatar
+                  initials={a.authorName
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .slice(0, 2)}
+                  size={28}
+                />
                 <div className="flex min-w-0 flex-col gap-1">
                   <div className="flex items-baseline gap-[7px]">
-                    <span className="text-[12.5px] font-medium text-ink">{a.who}</span>
-                    <span className="font-mono text-[11px] text-eyebrow">{a.time}</span>
+                    <span className="text-[12.5px] font-medium text-ink">
+                      {a.authorName}
+                    </span>
+                    <span className="font-mono text-[11px] text-eyebrow">
+                      {relativeTime(a.created_at)}
+                    </span>
                   </div>
-                  <span className="text-[13px] leading-[1.55] text-muted">{a.text}</span>
+                  <span className="text-[13px] leading-[1.55] text-muted">
+                    {a.message}
+                  </span>
                 </div>
               </div>
             ))}
+            {activity.length === 0 && (
+              <span className="text-sm text-meta">No activity yet.</span>
+            )}
           </div>
           <div className="flex flex-col gap-[9px] border-t border-black/[.07] px-[22px] py-4">
             <TextArea
@@ -183,16 +307,10 @@ export function JobDetail({ refParam }: { refParam: string }) {
               placeholder="Add a comment for the home team…"
               className="h-16"
             />
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[11.5px] text-eyebrow">
-                notifies 2 staff
-              </span>
+            <div className="flex items-center justify-end">
               <button
-                onClick={() => {
-                  if (!comment.trim()) return;
-                  addComment(comment.trim());
-                  setComment("");
-                }}
+                onClick={handleComment}
+                disabled={busy || !comment.trim()}
                 className={buttonClasses("primary")}
               >
                 Comment
