@@ -1,14 +1,21 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { isRole, roleDestinations } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { SESSION_STARTED_COOKIE, LAST_ACTIVE_COOKIE } from "@/lib/supabase/proxy";
 
 export type LoginState = { error?: string } | undefined;
 
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+
+  const cookieStore = await cookies();
+  cookieStore.delete(SESSION_STARTED_COOKIE);
+  cookieStore.delete(LAST_ACTIVE_COOKIE);
+
   redirect("/login");
 }
 

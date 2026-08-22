@@ -33,7 +33,7 @@ export function Select({
 }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
-      className={`h-10 appearance-none rounded-md border border-black/[.14] bg-surface px-3 text-sm text-ink outline-none focus:border-[1.5px] focus:border-graphite ${className}`}
+      className={`select-arrow h-10 appearance-none rounded-md border border-black/[.14] bg-surface pl-3 pr-8 text-sm text-ink outline-none focus:border-[1.5px] focus:border-graphite ${className}`}
       {...rest}
     >
       {children}

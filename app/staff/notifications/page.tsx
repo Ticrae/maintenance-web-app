@@ -1,14 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getHomes } from "@/app/actions/homes";
+import { getServerDictionary, getServerLocale } from "@/lib/i18n/server";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { NotificationsList, type NotifItem } from "./notifications-list";
 
-function dayLabel(date: Date) {
+function dayLabel(date: Date, dict: Dictionary, locale: string) {
   const today = new Date();
   const yesterday = new Date(today.getTime() - 86400_000);
-  if (date.toDateString() === today.toDateString()) return "Today";
-  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (date.toDateString() === today.toDateString()) return dict.staff.notifications.today;
+  if (date.toDateString() === yesterday.toDateString()) return dict.staff.notifications.yesterday;
+  return date.toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function firstLine(text: string) {
@@ -16,6 +21,9 @@ function firstLine(text: string) {
 }
 
 export default async function NotificationsPage() {
+  const dict = await getServerDictionary();
+  const locale = await getServerLocale();
+  const t = dict.staff.notifications;
   const supabase = await createClient();
   const {
     data: { user },
@@ -70,32 +78,34 @@ export default async function NotificationsPage() {
   for (const c of comments ?? []) {
     const request = requestById[c.request_id];
     if (!request) continue;
-    const author = [c.profiles?.first_name, c.profiles?.last_name].filter(Boolean).join(" ") || "Someone";
+    const author = [c.profiles?.first_name, c.profiles?.last_name].filter(Boolean).join(" ") || t.someone;
     items.push({
       id: `comment-${c.id}`,
       tag: request.priority === "Urgent" ? "urgent" : "comment",
-      title: `New comment on "${firstLine(request.description)}"`,
+      title: t.newComment(firstLine(request.description)),
       body: c.message,
-      meta: `${author} · ${dayLabel(new Date(c.created_at))}`,
+      meta: `${author} · ${dayLabel(new Date(c.created_at), dict, locale)}`,
       timestamp: c.created_at,
-      day: dayLabel(new Date(c.created_at)),
+      day: dayLabel(new Date(c.created_at), dict, locale),
     });
   }
 
   for (const r of rows) {
     if (r.status === "Open") continue;
+    const statusLabel =
+      dict.common.status[r.status as keyof typeof dict.common.status] ?? r.status;
     items.push({
       id: `status-${r.id}`,
       tag: r.priority === "Urgent" ? "urgent" : "status",
-      title: `"${firstLine(r.description)}" is now ${r.status}`,
+      title: t.statusChanged(firstLine(r.description), statusLabel),
       body: "",
-      meta: dayLabel(new Date(r.updated_at)),
+      meta: dayLabel(new Date(r.updated_at), dict, locale),
       timestamp: r.updated_at,
-      day: dayLabel(new Date(r.updated_at)),
+      day: dayLabel(new Date(r.updated_at), dict, locale),
     });
   }
 
   items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-  return <NotificationsList items={items} homeName={home?.name ?? "your home"} />;
+  return <NotificationsList items={items} homeName={home?.name ?? t.yourHomeFallback} />;
 }

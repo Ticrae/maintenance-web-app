@@ -14,6 +14,7 @@ import {
 } from "@/app/actions/requests";
 import { addRequestComment } from "@/app/actions/comments";
 import { uploadRequestPhoto } from "@/app/actions/photos";
+import { useDictionary } from "@/lib/i18n/language-provider";
 import type { Priority } from "@/lib/theme";
 
 export type JobDetailData = {
@@ -40,7 +41,6 @@ export type PhotoItem = { id: string; url: string; created_at: string };
 const STATUS_OPTIONS: RequestStatus[] = [
   "Assigned",
   "In Progress",
-  "Waiting for Parts",
   "Completed",
   "Cancelled",
 ];
@@ -49,9 +49,8 @@ const STEP_INDEX: Record<string, number> = {
   Open: 0,
   Assigned: 1,
   "In Progress": 2,
-  "Waiting for Parts": 3,
-  Completed: 4,
-  Cancelled: 4,
+  Completed: 3,
+  Cancelled: 3,
 };
 
 export function JobDetail({
@@ -64,6 +63,8 @@ export function JobDetail({
   photos: PhotoItem[];
 }) {
   const router = useRouter();
+  const dict = useDictionary();
+  const t = dict.maintenance.jobDetail;
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +85,7 @@ export function JobDetail({
       await updateJobStage(job.id, status);
       setBusy(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not update this job.");
+      setError(e instanceof Error ? e.message : t.updateError);
       setBusy(false);
     }
   }
@@ -97,7 +98,7 @@ export function JobDetail({
       await addRequestComment(job.id, comment.trim());
       setComment("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not post comment.");
+      setError(e instanceof Error ? e.message : t.commentError);
     } finally {
       setBusy(false);
     }
@@ -113,7 +114,7 @@ export function JobDetail({
       formData.set("photo", file);
       await uploadRequestPhoto(job.id, formData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not upload photo.");
+      setError(err instanceof Error ? err.message : t.photoError);
     } finally {
       setBusy(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -122,9 +123,9 @@ export function JobDetail({
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex h-[70px] flex-none items-center gap-[14px] border-b border-black/[.08] px-7">
+      <div className="flex min-h-[70px] flex-none flex-wrap items-center gap-[10px] border-b border-black/[.08] px-4 py-3 sm:gap-[14px] sm:px-7">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-[10px]">
+          <div className="flex flex-wrap items-center gap-[10px]">
             <span className="font-mono text-[12.5px] font-medium text-faint">
               {job.id.slice(0, 8).toUpperCase()}
             </span>
@@ -134,8 +135,8 @@ export function JobDetail({
             {job.priority === "Urgent" && <UrgentTag />}
           </div>
           <span className="font-mono text-xs text-meta">
-            {job.homeName} · raised by {job.reporterName} ·{" "}
-            {relativeTime(job.created_at)}
+            {job.homeName} · {t.raisedBy(job.reporterName)} ·{" "}
+            {relativeTime(job.created_at, dict.common.time)}
           </span>
         </div>
         <div className="ml-auto flex gap-[10px]">
@@ -144,31 +145,36 @@ export function JobDetail({
               onClick={() => handleStatusChange("Completed")}
               disabled={busy}
             >
-              Mark completed
+              {t.markCompleted}
             </Button>
           )}
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex flex-1 flex-col gap-4 overflow-auto bg-canvas p-6">
+      <div className="flex flex-1 flex-col md:flex-row md:overflow-hidden">
+        <div className="flex flex-1 flex-col gap-4 overflow-auto bg-canvas p-4 sm:p-6">
           {error && (
             <p className="text-sm text-red-700" role="alert">
               {error}
             </p>
           )}
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
-            <div className="flex items-center justify-between">
-              <Eyebrow>Progress</Eyebrow>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Eyebrow>{t.progress}</Eyebrow>
               <span className="font-mono text-[11.5px] text-eyebrow">
-                {job.status} · updated {relativeTime(job.updated_at)}
+                {
+                  dict.common.status[
+                    job.status as keyof typeof dict.common.status
+                  ]
+                }{" "}
+                · {t.updated(relativeTime(job.updated_at, dict.common.time))}
               </span>
             </div>
             <Stepper activeIndex={STEP_INDEX[job.status] ?? 0} />
           </div>
 
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
-            <Eyebrow>Reported issue</Eyebrow>
+            <Eyebrow>{t.reportedIssue}</Eyebrow>
             <p className="max-w-[62ch] text-sm leading-[1.6] text-body">
               {details || title}
             </p>
@@ -178,11 +184,11 @@ export function JobDetail({
           </div>
 
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
-            <div className="flex items-center justify-between">
-              <Eyebrow>Photos</Eyebrow>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Eyebrow>{t.photos}</Eyebrow>
               {job.status !== "Completed" && job.status !== "Cancelled" && (
                 <div className="flex items-center gap-2">
-                  <span className="text-[12px] text-meta">Set status</span>
+                  <span className="text-[12px] text-meta">{t.setStatus}</span>
                   <Select
                     value={job.status}
                     disabled={busy}
@@ -193,7 +199,7 @@ export function JobDetail({
                   >
                     {STATUS_OPTIONS.map((s) => (
                       <option key={s} value={s}>
-                        {s}
+                        {dict.common.status[s]}
                       </option>
                     ))}
                   </Select>
@@ -224,51 +230,20 @@ export function JobDetail({
                 disabled={busy}
               >
                 <AddPhotoTile
-                  label="Upload"
-                  hint="add photo"
+                  label={t.uploadLabel}
+                  hint={t.uploadHint}
                   className="h-24 w-[132px]"
                 />
               </button>
             </div>
           </div>
-          <div>
-            <Eyebrow>Comments</Eyebrow>
-            <div className="flex flex-col gap-[18px]">
-              {activity.map((a) => (
-                <div key={a.id} className="flex gap-[11px]">
-                  <Avatar
-                    initials={a.authorName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2)}
-                    size={28}
-                  />
-                  <div className="flex min-w-0 flex-col gap-1">
-                    <div className="flex items-baseline gap-[7px]">
-                      <span className="text-[12.5px] font-medium text-ink">
-                        {a.authorName}
-                      </span>
-                      <span className="font-mono text-[11px] text-eyebrow">
-                        {relativeTime(a.created_at)}
-                      </span>
-                    </div>
-                    <span className="text-[13px] leading-[1.55] text-muted">
-                      {a.message}
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {activity.length === 0 && (
-                <span className="text-sm text-meta">No comments yet.</span>
-              )}
-            </div>
-          </div>
         </div>
 
-        <div className="flex w-[390px] flex-none flex-col border-l border-black/[.08]">
+        <div className="flex w-full flex-none flex-col border-t border-black/[.08] md:w-[390px] md:border-l md:border-t-0">
           <div className="flex items-center justify-between border-b border-black/[.07] px-[22px] py-4">
-            <span className="text-[13px] font-semibold text-ink">Activity</span>
+            <span className="text-[13px] font-semibold text-ink">
+              {t.activity}
+            </span>
           </div>
           <div className="flex flex-1 flex-col gap-[18px] overflow-auto px-[22px] py-[18px]">
             {activity.map((a) => (
@@ -287,7 +262,7 @@ export function JobDetail({
                       {a.authorName}
                     </span>
                     <span className="font-mono text-[11px] text-eyebrow">
-                      {relativeTime(a.created_at)}
+                      {relativeTime(a.created_at, dict.common.time)}
                     </span>
                   </div>
                   <span className="text-[13px] leading-[1.55] text-muted">
@@ -297,23 +272,23 @@ export function JobDetail({
               </div>
             ))}
             {activity.length === 0 && (
-              <span className="text-sm text-meta">No activity yet.</span>
+              <span className="text-sm text-meta">{t.noActivityYet}</span>
             )}
           </div>
           <div className="flex flex-col gap-[9px] border-t border-black/[.07] px-[22px] py-4">
             <TextArea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Add a comment for the home team…"
+              placeholder={t.commentPlaceholder}
               className="h-16"
             />
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-around">
               <button
                 onClick={handleComment}
                 disabled={busy || !comment.trim()}
                 className={buttonClasses("primary")}
               >
-                Comment
+                {t.commentButton}
               </button>
             </div>
           </div>

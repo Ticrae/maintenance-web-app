@@ -17,6 +17,8 @@ import {
   assignRequest,
   type RequestStatus,
 } from "@/app/actions/requests";
+import { useDictionary } from "@/lib/i18n/language-provider";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 export type RequestRow = {
   id: string;
@@ -53,8 +55,8 @@ const PRIORITIES: Priority[] = ["Urgent", "High", "Medium", "Low"];
 const GRID_COLS =
   "grid-cols-[84px_minmax(220px,1fr)_140px_110px_90px_140px_160px_130px_100px]";
 
-function assigneeName(a: Assignee) {
-  return [a.first_name, a.last_name].filter(Boolean).join(" ") || "Unnamed";
+function assigneeName(a: Assignee, dict: Dictionary) {
+  return [a.first_name, a.last_name].filter(Boolean).join(" ") || dict.common.unnamed;
 }
 
 export function RequestsTable({
@@ -72,6 +74,8 @@ export function RequestsTable({
   );
   const [priorityFilter, setPriorityFilter] = useState<Priority | "All">("All");
   const [, startTransition] = useTransition();
+  const dict = useDictionary();
+  const t = dict.admin.requests;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -91,18 +95,21 @@ export function RequestsTable({
 
   const openCount = requests.filter((r) => r.status === "Open").length;
   const urgentOpen = requests.filter(
-    (r) => r.priority === "Urgent" && r.status !== "Completed" && r.status !== "Cancelled",
+    (r) =>
+      r.priority === "Urgent" &&
+      r.status !== "Completed" &&
+      r.status !== "Cancelled",
   ).length;
   const unassigned = requests.filter((r) => !r.assigned_to).length;
 
   return (
     <div className="flex flex-1 flex-col overflow-auto">
       <PageHeader
-        title="Requests"
-        subtitle="Every maintenance request across all homes"
+        title={t.title}
+        subtitle={t.subtitle}
         actions={
           <TextField
-            placeholder="Search description or home…"
+            placeholder={t.searchPlaceholder}
             className="w-full sm:w-[260px]"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -110,19 +117,19 @@ export function RequestsTable({
         }
       />
       <div className="flex flex-1 flex-col gap-4 bg-canvas p-4 sm:p-7">
-        <div className="flex gap-3">
-          <StatTile label="Total requests" value={requests.length} />
-          <StatTile label="Open" value={openCount} />
+        <div className="flex flex-wrap gap-3">
+          <StatTile label={dict.common.stat.totalRequests} value={requests.length} />
+          <StatTile label={dict.common.stat.open} value={openCount} />
           <StatTile
-            label="Urgent open"
+            label={dict.common.stat.urgentOpen}
             value={urgentOpen}
             valueClassName="text-urgent"
           />
-          <StatTile label="Unassigned" value={unassigned} />
+          <StatTile label={dict.common.stat.unassigned} value={unassigned} />
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {(["All", ...STATUSES] as const).map((s) => (
               <button
                 key={s}
@@ -133,7 +140,7 @@ export function RequestsTable({
                     : "border border-black/[.14] text-muted"
                 }`}
               >
-                {s}
+                {s === "All" ? dict.common.all : dict.common.status[s]}
               </button>
             ))}
           </div>
@@ -148,7 +155,7 @@ export function RequestsTable({
                     : "border border-black/[.14] text-muted"
                 }`}
               >
-                {p}
+                {p === "All" ? dict.common.all : dict.common.priority[p]}
               </button>
             ))}
           </div>
@@ -156,15 +163,15 @@ export function RequestsTable({
 
         <div className={tableWrapClass}>
           <div className={`${tableHeadRowClass} ${GRID_COLS}`}>
-            <span>Ref</span>
-            <span>Issue</span>
-            <span>Home</span>
-            <span>Category</span>
-            <span>Priority</span>
-            <span>Status</span>
-            <span>Assigned to</span>
-            <span>Reported by</span>
-            <span>Created</span>
+            <span>{dict.common.table.ref}</span>
+            <span>{dict.common.table.issue}</span>
+            <span>{dict.common.table.home}</span>
+            <span>{dict.common.table.category}</span>
+            <span>{dict.common.table.priority}</span>
+            <span>{dict.common.table.status}</span>
+            <span>{dict.common.table.assignedTo}</span>
+            <span>{dict.common.table.reportedBy}</span>
+            <span>{dict.common.table.created}</span>
           </div>
           {filtered.map((r) => {
             const eligible = assignees.filter(
@@ -202,7 +209,7 @@ export function RequestsTable({
                 >
                   {STATUSES.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {dict.common.status[s]}
                     </option>
                   ))}
                 </Select>
@@ -216,10 +223,10 @@ export function RequestsTable({
                     });
                   }}
                 >
-                  <option value="">Unassigned</option>
+                  <option value="">{dict.common.unassigned}</option>
                   {eligible.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {assigneeName(a)}
+                      {assigneeName(a, dict)}
                     </option>
                   ))}
                 </Select>
@@ -227,14 +234,14 @@ export function RequestsTable({
                   {profileMap[r.reported_by] ?? "—"}
                 </span>
                 <span className="font-mono text-[11px] text-eyebrow">
-                  {relativeTime(r.created_at)}
+                  {relativeTime(r.created_at, dict.common.time)}
                 </span>
               </div>
             );
           })}
           {filtered.length === 0 && (
             <div className="px-4 py-8 text-center text-sm text-meta">
-              No requests match.
+              {t.noMatch}
             </div>
           )}
         </div>

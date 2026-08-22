@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getServerDictionary } from "@/lib/i18n/server";
 import { RequestDetail, type RequestDetailData, type CommentItem, type PhotoItem } from "./request-detail";
 
 export default async function StaffRequestDetailPage(props: PageProps<"/staff/requests/[id]">) {
   const { id } = await props.params;
+  const dict = await getServerDictionary();
 
   const supabase = await createClient();
   const {
@@ -85,9 +87,9 @@ export default async function StaffRequestDetailPage(props: PageProps<"/staff/re
     created_at: request.created_at,
     updated_at: request.updated_at,
     homeName: request.homes?.name ?? "—",
-    reporterName: [reporter?.first_name, reporter?.last_name].filter(Boolean).join(" ") || "Unknown",
+    reporterName: [reporter?.first_name, reporter?.last_name].filter(Boolean).join(" ") || dict.staff.requestDetail.unknown,
     assigneeName: assignee
-      ? [assignee.first_name, assignee.last_name].filter(Boolean).join(" ") || "Unnamed"
+      ? [assignee.first_name, assignee.last_name].filter(Boolean).join(" ") || dict.common.unnamed
       : null,
   };
 
@@ -95,7 +97,7 @@ export default async function StaffRequestDetailPage(props: PageProps<"/staff/re
     id: c.id,
     message: c.message,
     created_at: c.created_at,
-    authorName: [c.profiles?.first_name, c.profiles?.last_name].filter(Boolean).join(" ") || "Unknown",
+    authorName: [c.profiles?.first_name, c.profiles?.last_name].filter(Boolean).join(" ") || dict.staff.requestDetail.unknown,
   }));
 
   return <RequestDetail request={detail} activity={activity} photos={photos ?? []} />;

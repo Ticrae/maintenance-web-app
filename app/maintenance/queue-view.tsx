@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/inputs";
 import { buttonClasses } from "@/components/ui/button";
 import { relativeTime } from "@/lib/date";
 import { acceptRequest } from "@/app/actions/requests";
+import { useDictionary } from "@/lib/i18n/language-provider";
 import type { Priority } from "@/lib/theme";
 
 export type QueueRow = {
@@ -25,6 +26,8 @@ export type QueueRow = {
 const PRIORITIES: Priority[] = ["Urgent", "High", "Medium", "Low"];
 
 export function QueueView({ queue, homes }: { queue: QueueRow[]; homes: { id: string; name: string }[] }) {
+  const dict = useDictionary();
+  const t = dict.maintenance.queue;
   const [priorityFilter, setPriorityFilter] = useState<Set<Priority>>(new Set());
   const [homeFilter, setHomeFilter] = useState<Set<string>>(new Set());
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -55,7 +58,7 @@ export function QueueView({ queue, homes }: { queue: QueueRow[]; homes: { id: st
     try {
       await acceptRequest(id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not accept this job.");
+      setError(e instanceof Error ? e.message : t.acceptError);
     } finally {
       setPendingId(null);
     }
@@ -66,21 +69,21 @@ export function QueueView({ queue, homes }: { queue: QueueRow[]; homes: { id: st
       <div className="flex w-full flex-none flex-col gap-6 border-b border-black/[.08] bg-panel px-[18px] py-5 md:w-[240px] md:border-b-0 md:border-r">
         <div className="flex flex-col gap-[9px]">
           <span className="font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-eyebrow">
-            Priority
+            {dict.common.table.priority}
           </span>
           {PRIORITIES.map((p) => (
             <Checkbox
               key={p}
               checked={priorityFilter.has(p)}
               onChange={() => toggle(priorityFilter, p, setPriorityFilter)}
-              label={p}
+              label={dict.common.priority[p]}
               count={queue.filter((j) => j.priority === p).length}
             />
           ))}
         </div>
         <div className="flex flex-col gap-[9px]">
           <span className="font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-eyebrow">
-            Location
+            {t.location}
           </span>
           {homes.map((h) => (
             <Checkbox
@@ -95,8 +98,8 @@ export function QueueView({ queue, homes }: { queue: QueueRow[]; homes: { id: st
 
       <div className="flex min-w-0 flex-1 flex-col">
         <PageHeader
-          title="Job queue"
-          subtitle={`${filtered.length} of ${queue.length} shown · ${activeCount} filters active`}
+          title={t.title}
+          subtitle={t.subtitle(filtered.length, queue.length, activeCount)}
         />
         <div className="flex flex-1 flex-col gap-3 overflow-auto bg-canvas p-4 sm:p-6">
           {error && (
@@ -107,16 +110,16 @@ export function QueueView({ queue, homes }: { queue: QueueRow[]; homes: { id: st
           {activeCount > 0 && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="mr-[2px] font-mono text-[10px] font-semibold uppercase tracking-[.09em] text-eyebrow">
-                Active
+                {t.active}
               </span>
               {[...priorityFilter].length > 0 && (
                 <span className="rounded-md bg-chip px-[9px] py-[6px] text-xs text-body">
-                  {[...priorityFilter].join(" + ")}
+                  {[...priorityFilter].map((p) => dict.common.priority[p]).join(" + ")}
                 </span>
               )}
               {[...homeFilter].length > 0 && (
                 <span className="rounded-md bg-chip px-[9px] py-[6px] text-xs text-body">
-                  {homeFilter.size} home{homeFilter.size > 1 ? "s" : ""}
+                  {t.homesCount(homeFilter.size)}
                 </span>
               )}
               <button
@@ -126,7 +129,7 @@ export function QueueView({ queue, homes }: { queue: QueueRow[]; homes: { id: st
                 }}
                 className="text-xs text-meta hover:text-muted"
               >
-                Clear all
+                {t.clearAll}
               </button>
             </div>
           )}
@@ -142,9 +145,9 @@ export function QueueView({ queue, homes }: { queue: QueueRow[]; homes: { id: st
                 meta={`${j.homeName} · ${j.category}`}
                 right={
                   <>
-                    <span className="text-[12.5px] text-subtle">{j.assigneeName ?? "Unassigned"}</span>
+                    <span className="text-[12.5px] text-subtle">{j.assigneeName ?? dict.common.unassigned}</span>
                     <span className="font-mono text-[11.5px] text-eyebrow">
-                      {relativeTime(j.created_at)}
+                      {relativeTime(j.created_at, dict.common.time)}
                     </span>
                   </>
                 }
@@ -155,18 +158,18 @@ export function QueueView({ queue, homes }: { queue: QueueRow[]; homes: { id: st
                       disabled={pendingId === j.id}
                       className={buttonClasses("primary")}
                     >
-                      {pendingId === j.id ? "Accepting…" : "Accept"}
+                      {pendingId === j.id ? t.accepting : t.accept}
                     </button>
                   ) : (
                     <Link href={`/maintenance/jobs/${j.id}`} className={buttonClasses("outline")}>
-                      Open
+                      {t.open}
                     </Link>
                   )
                 }
               />
             ))}
             {filtered.length === 0 && (
-              <div className="px-4 py-8 text-center text-sm text-meta">No jobs match.</div>
+              <div className="px-4 py-8 text-center text-sm text-meta">{t.noMatch}</div>
             )}
           </div>
         </div>

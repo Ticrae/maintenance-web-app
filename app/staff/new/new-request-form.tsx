@@ -10,6 +10,7 @@ import { TextField, TextArea, Select, Toggle } from "@/components/ui/inputs";
 import { submitStaffRequest } from "@/app/actions/requests";
 import { uploadRequestPhoto } from "@/app/actions/photos";
 import type { Priority } from "@/lib/theme";
+import { useDictionary } from "@/lib/i18n/language-provider";
 
 type PhotoPreview = {
   file: File;
@@ -27,6 +28,8 @@ export function NewRequestForm({
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dict = useDictionary();
+  const t = dict.staff.newRequest;
 
   const [title, setTitle] = useState("");
   const [homeId, setHomeId] = useState(defaultHomeId || homes[0]?.id || "");
@@ -60,13 +63,13 @@ export function NewRequestForm({
 
     for (const file of files) {
       if (!file.type.startsWith("image/")) {
-        setError(`${file.name} is not an image.`);
+        setError(t.notImage(file.name));
         continue;
       }
 
       // 10 MB limit per photo
       if (file.size > 10 * 1024 * 1024) {
-        setError(`${file.name} is too large. Maximum size is 10 MB.`);
+        setError(t.tooLarge(file.name));
         continue;
       }
 
@@ -103,17 +106,17 @@ export function NewRequestForm({
     if (pending) return;
 
     if (!homeId) {
-      setError("Choose a home first.");
+      setError(t.chooseHomeError);
       return;
     }
 
     if (!title.trim()) {
-      setError("Enter a short title.");
+      setError(t.titleRequiredError);
       return;
     }
 
     if (!description.trim()) {
-      setError("Enter a description.");
+      setError(t.descriptionRequiredError);
       return;
     }
 
@@ -167,7 +170,7 @@ export function NewRequestForm({
       console.error("Submit request error:", err);
 
       setError(
-        err instanceof Error ? err.message : "Could not submit request.",
+        err instanceof Error ? err.message : t.submitError,
       );
 
       setPending(false);
@@ -180,20 +183,20 @@ export function NewRequestForm({
         <div className="h-[26px] w-[26px] rounded-md bg-graphite" />
 
         <Link href="/staff" className="text-[13px] text-meta">
-          My requests
+          {dict.staff.nav.myRequests}
         </Link>
 
         <span className="text-[13px] text-hairline">/</span>
 
-        <span className="text-[13px] font-medium text-ink">New request</span>
+        <span className="text-[13px] font-medium text-ink">{t.title}</span>
 
         <div className="ml-auto flex gap-[10px]">
           <Link href="/staff" className={buttonClasses("outline")}>
-            Cancel
+            {dict.common.cancel}
           </Link>
 
           <Button type="submit" form="new-request-form" disabled={pending}>
-            {pending ? "Submitting…" : "Submit request"}
+            {pending ? t.submitting : t.submit}
           </Button>
         </div>
       </div>
@@ -205,11 +208,11 @@ export function NewRequestForm({
       >
         <div className="flex max-w-[720px] flex-1 flex-col gap-[18px]">
           <div className="flex flex-col gap-[18px] rounded-lg border border-black/[.09] bg-surface p-6">
-            <Eyebrow>What needs fixing</Eyebrow>
+            <Eyebrow>{t.whatNeedsFixing}</Eyebrow>
 
             <div className="flex flex-col gap-[7px]">
               <label className="text-[13px] font-medium text-body">
-                Short title
+                {t.shortTitleLabel}
               </label>
 
               <TextField
@@ -222,7 +225,7 @@ export function NewRequestForm({
             <div className="flex gap-[14px]">
               <div className="flex flex-1 flex-col gap-[7px]">
                 <label className="text-[13px] font-medium text-body">
-                  Home
+                  {dict.common.table.home}
                 </label>
 
                 <Select
@@ -231,7 +234,7 @@ export function NewRequestForm({
                   required
                 >
                   {homes.length === 0 && (
-                    <option value="">No homes available</option>
+                    <option value="">{t.noHomesAvailable}</option>
                   )}
 
                   {homes.map((h) => (
@@ -244,7 +247,7 @@ export function NewRequestForm({
 
               <div className="flex flex-1 flex-col gap-[7px]">
                 <label className="text-[13px] font-medium text-body">
-                  Category
+                  {dict.common.table.category}
                 </label>
 
                 <Select
@@ -262,19 +265,19 @@ export function NewRequestForm({
 
             <div className="flex flex-col gap-[7px]">
               <label className="text-[13px] font-medium text-body">
-                Room / location (optional)
+                {t.roomLocation}
               </label>
 
               <TextField
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Room 12"
+                placeholder={t.roomPlaceholder}
               />
             </div>
 
             <div className="flex flex-col gap-[7px]">
               <label className="text-[13px] font-medium text-body">
-                Description
+                {t.descriptionLabel}
               </label>
 
               <TextArea
@@ -288,7 +291,7 @@ export function NewRequestForm({
 
           {/* PHOTOS */}
           <div className="flex flex-col gap-4 rounded-lg border border-black/[.09] bg-surface p-6">
-            <Eyebrow>Photos</Eyebrow>
+            <Eyebrow>{t.photosLabel}</Eyebrow>
 
             <div className="flex flex-wrap gap-3">
               {photos.map((photo, i) => (
@@ -307,7 +310,7 @@ export function NewRequestForm({
                     onClick={() => removePhoto(i)}
                     disabled={pending}
                     className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-xs text-white disabled:opacity-50"
-                    aria-label={`Remove ${photo.file.name}`}
+                    aria-label={t.removePhoto(photo.file.name)}
                   >
                     ×
                   </button>
@@ -334,7 +337,7 @@ export function NewRequestForm({
             </div>
 
             <p className="text-[11.5px] text-meta">
-              JPG, PNG, WebP or GIF. Maximum 10 MB per photo.
+              {t.photoHint}
             </p>
           </div>
 
@@ -351,7 +354,7 @@ export function NewRequestForm({
         {/* PRIORITY */}
         <div className="flex w-[340px] flex-none flex-col gap-4">
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
-            <Eyebrow>Priority</Eyebrow>
+            <Eyebrow>{dict.common.table.priority}</Eyebrow>
 
             <div className="flex flex-col gap-2">
               {(["Low", "Medium", "High"] as Priority[]).map((p) => (
@@ -366,11 +369,11 @@ export function NewRequestForm({
                       : "border-black/[.12] text-muted"
                   }`}
                 >
-                  {p === "Low" && "Low — can wait for the next visit"}
+                  {p === "Low" && t.priorityLow}
 
-                  {p === "Medium" && "Medium — within a few days"}
+                  {p === "Medium" && t.priorityMedium}
 
-                  {p === "High" && "High — same day"}
+                  {p === "High" && t.priorityHigh}
                 </button>
               ))}
             </div>
@@ -384,12 +387,11 @@ export function NewRequestForm({
 
               <div className="flex flex-col gap-[3px]">
                 <span className="text-[13px] font-medium text-urgent">
-                  Flag as urgent
+                  {t.flagUrgent}
                 </span>
 
                 <span className="text-[11.5px] leading-[1.45] text-meta">
-                  Risk to a resident or the building. Pages the on-call
-                  maintenance lead immediately.
+                  {t.urgentHint}
                 </span>
               </div>
             </div>

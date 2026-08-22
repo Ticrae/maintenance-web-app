@@ -9,6 +9,7 @@ import { TextField, TextArea, Select } from "@/components/ui/inputs";
 import { RoleChip } from "@/components/ui/badges";
 import { tableWrapClass, tableHeadRowClass, tableRowClass } from "@/components/ui/table";
 import type { Role } from "@/lib/theme";
+import { useDictionary } from "@/lib/i18n/language-provider";
 
 export type HomeRow = { id: string; name: string; address: string | null; agencyName: string; open: number };
 export type AgencyRow = { id: string; name: string };
@@ -18,6 +19,8 @@ const ROLES: (Role | "All")[] = ["All", "staff", "maintenance", "agency_admin", 
 const PEOPLE_GRID_COLS = "grid-cols-[36px_minmax(180px,1fr)_150px_170px_170px]";
 
 export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agencies: AgencyRow[]; people: PersonRow[] }) {
+  const dict = useDictionary();
+  const t = dict.admin.homes;
   const [roleFilter, setRoleFilter] = useState<Role | "All">("All");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [agencyDrawerOpen, setAgencyDrawerOpen] = useState(false);
@@ -42,7 +45,7 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
       setAddress("");
       setSelectedAgencyId("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create home.");
+      setError(err instanceof Error ? err.message : t.createHomeError);
     } finally {
       setPending(false);
     }
@@ -58,7 +61,7 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
       setAgencyDrawerOpen(false);
       setAgencyName("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create agency.");
+      setError(err instanceof Error ? err.message : t.createAgencyError);
     } finally {
       setPending(false);
     }
@@ -69,14 +72,14 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
       <div className="flex w-full flex-none flex-col gap-6 lg:w-[330px]">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-[15px] font-semibold text-ink">Agencies</span>
+            <span className="text-[15px] font-semibold text-ink">{t.agencies}</span>
             <Button variant="outline" onClick={() => setAgencyDrawerOpen(true)}>
-              Add agency
+              {t.addAgency}
             </Button>
           </div>
           {agencies.length === 0 ? (
             <div className="flex flex-col gap-1 rounded-lg border border-black/[.09] bg-surface p-3">
-              <p className="text-[12px] text-subtle">No agencies yet. Create one to get started.</p>
+              <p className="text-[12px] text-subtle">{t.noAgenciesYet}</p>
             </div>
           ) : (
             <div className="flex flex-col gap-1">
@@ -91,9 +94,9 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
 
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-[15px] font-semibold text-ink">Homes</span>
+            <span className="text-[15px] font-semibold text-ink">{t.homesHeading}</span>
             <Button variant="outline" onClick={() => setDrawerOpen(true)}>
-              Add home
+              {t.addHome}
             </Button>
           </div>
           <div className="flex flex-col gap-1">
@@ -103,20 +106,20 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
                   <span className="text-[13.5px] font-medium text-ink">{h.name}</span>
                   <span className="font-mono text-[11.5px] text-eyebrow">{h.agencyName}</span>
                 </div>
-                <span className="font-mono text-xs text-meta">{h.open} open</span>
+                <span className="font-mono text-xs text-meta">{t.openCount(h.open)}</span>
               </div>
             ))}
-            {homes.length === 0 && <p className="px-3 text-[12px] text-subtle">No homes yet.</p>}
+            {homes.length === 0 && <p className="px-3 text-[12px] text-subtle">{t.noHomesYet}</p>}
           </div>
         </div>
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <div className="flex items-center justify-between">
-          <span className="text-[15px] font-semibold text-ink">People</span>
+          <span className="text-[15px] font-semibold text-ink">{t.people}</span>
           <div className="flex flex-wrap gap-[10px]">
             <Link href="/admin/users" className={buttonClasses("outline")}>
-              Manage users
+              {t.manageUsers}
             </Link>
           </div>
         </div>
@@ -129,7 +132,8 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
                 roleFilter === r ? "bg-graphite text-white" : "border border-black/[.14] text-muted"
               }`}
             >
-              {r} · {r === "All" ? people.length : people.filter((p) => p.role === r).length}
+              {r === "All" ? dict.common.all : dict.common.role[r]} ·{" "}
+              {r === "All" ? people.length : people.filter((p) => p.role === r).length}
             </button>
           ))}
         </div>
@@ -137,10 +141,10 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
         <div className={tableWrapClass}>
           <div className={`${tableHeadRowClass} ${PEOPLE_GRID_COLS}`}>
             <span />
-            <span>Name</span>
-            <span>Role</span>
-            <span>Agency</span>
-            <span>Home</span>
+            <span>{dict.common.table.name}</span>
+            <span>{dict.common.table.role}</span>
+            <span>{dict.common.table.agency}</span>
+            <span>{t.home}</span>
           </div>
           {filteredPeople.map((p) => (
             <div key={p.id} className={`${tableRowClass} ${PEOPLE_GRID_COLS}`}>
@@ -155,7 +159,7 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
             </div>
           ))}
           {filteredPeople.length === 0 && (
-            <div className="px-4 py-8 text-center text-sm text-meta">No people match.</div>
+            <div className="px-4 py-8 text-center text-sm text-meta">{t.noPeopleMatch}</div>
           )}
         </div>
       </div>
@@ -165,24 +169,24 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
           <div className="fixed inset-0 z-10 bg-black/20" onClick={() => setDrawerOpen(false)} />
           <div className="fixed right-0 top-0 z-20 flex h-full w-full flex-col gap-5 bg-surface p-4 shadow-[-12px_0_28px_rgba(0,0,0,.09)] sm:w-[380px] sm:p-6">
             <div className="flex items-center justify-between">
-              <span className="text-base font-semibold text-ink">Add home</span>
+              <span className="text-base font-semibold text-ink">{t.addHomeTitle}</span>
               <button onClick={() => setDrawerOpen(false)} className="text-lg text-meta hover:text-muted">
                 ×
               </button>
             </div>
             <form onSubmit={handleCreateHome} className="flex flex-1 flex-col gap-4">
               <div className="flex flex-col gap-[7px]">
-                <label className="text-[13px] font-medium text-body">Home name</label>
+                <label className="text-[13px] font-medium text-body">{t.homeName}</label>
                 <TextField value={name} onChange={(e) => setName(e.target.value)} placeholder="Harefield Court" required />
               </div>
               <div className="flex flex-col gap-[7px]">
-                <label className="text-[13px] font-medium text-body">Address</label>
+                <label className="text-[13px] font-medium text-body">{t.address}</label>
                 <TextArea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Main Street, City" className="h-20" />
               </div>
               <div className="flex flex-col gap-[7px]">
-                <label className="text-[13px] font-medium text-body">Agency</label>
+                <label className="text-[13px] font-medium text-body">{t.agency}</label>
                 <Select value={selectedAgencyId} onChange={(e) => setSelectedAgencyId(e.target.value)}>
-                  <option value="">Select an agency (optional)</option>
+                  <option value="">{t.selectAgencyOptional}</option>
                   {agencies.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.name}
@@ -193,10 +197,10 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
               {error && <p className="text-sm text-red-700" role="alert">{error}</p>}
               <div className="ml-auto flex gap-2">
                 <Button type="button" variant="outline" onClick={() => setDrawerOpen(false)}>
-                  Cancel
+                  {dict.common.cancel}
                 </Button>
                 <Button type="submit" disabled={pending}>
-                  {pending ? "Creating…" : "Create home"}
+                  {pending ? t.creating : t.createHome}
                 </Button>
               </div>
             </form>
@@ -209,23 +213,23 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
           <div className="fixed inset-0 z-10 bg-black/20" onClick={() => setAgencyDrawerOpen(false)} />
           <div className="fixed right-0 top-0 z-20 flex h-full w-full flex-col gap-5 bg-surface p-4 shadow-[-12px_0_28px_rgba(0,0,0,.09)] sm:w-[380px] sm:p-6">
             <div className="flex items-center justify-between">
-              <span className="text-base font-semibold text-ink">Add agency</span>
+              <span className="text-base font-semibold text-ink">{t.addAgencyTitle}</span>
               <button onClick={() => setAgencyDrawerOpen(false)} className="text-lg text-meta hover:text-muted">
                 ×
               </button>
             </div>
             <form onSubmit={handleCreateAgency} className="flex flex-1 flex-col gap-4">
               <div className="flex flex-col gap-[7px]">
-                <label className="text-[13px] font-medium text-body">Agency name</label>
+                <label className="text-[13px] font-medium text-body">{t.agencyName}</label>
                 <TextField value={agencyName} onChange={(e) => setAgencyName(e.target.value)} placeholder="My Care Agency" required />
               </div>
               {error && <p className="text-sm text-red-700" role="alert">{error}</p>}
               <div className="ml-auto flex gap-2">
                 <Button type="button" variant="outline" onClick={() => setAgencyDrawerOpen(false)}>
-                  Cancel
+                  {dict.common.cancel}
                 </Button>
                 <Button type="submit" disabled={pending}>
-                  {pending ? "Creating…" : "Create agency"}
+                  {pending ? t.creating : t.createAgency}
                 </Button>
               </div>
             </form>

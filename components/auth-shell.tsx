@@ -3,7 +3,7 @@ export function AuthLogo() {
     <div className="flex items-center gap-[10px]">
       <div className="h-7 w-7 rounded-[7px] bg-graphite" />
       <span className="text-[15px] font-semibold tracking-[-.01em] text-ink">
-        Upkeep
+        FixNest
       </span>
     </div>
   );

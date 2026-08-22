@@ -8,6 +8,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { relativeTime } from "@/lib/date";
 import { dueAt, isOverdue } from "@/lib/sla";
 import { updateJobStage, completeJob, type RequestStatus } from "@/app/actions/requests";
+import { useDictionary } from "@/lib/i18n/language-provider";
 import type { Priority } from "@/lib/theme";
 
 export type MyJobRow = {
@@ -20,27 +21,31 @@ export type MyJobRow = {
   homeName: string;
 };
 
-const GROUP_TONE: Record<string, string> = {
-  Overdue: "text-urgent",
-  Today: "text-ink",
-  "Waiting on parts": "text-ink",
-};
+type GroupKey = "overdue" | "today" | "parts";
 
-const CTA: Record<string, { label: string; next: RequestStatus | "complete" }> = {
-  Assigned: { label: "Start work", next: "In Progress" },
-  "In Progress": { label: "Mark complete", next: "complete" },
-  "Waiting for Parts": { label: "Resume", next: "In Progress" },
-};
-
-const STAGE_LABEL: Record<string, string> = {
-  Assigned: "Accepted",
-  "In Progress": "On site",
-  "Waiting for Parts": "Parts ordered",
+const GROUP_TONE: Record<GroupKey, string> = {
+  overdue: "text-urgent",
+  today: "text-ink",
+  parts: "text-ink",
 };
 
 export function MyJobsView({ jobs, slaHours }: { jobs: MyJobRow[]; slaHours: Record<string, number> }) {
+  const dict = useDictionary();
+  const t = dict.maintenance.myJobs;
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const CTA: Record<string, { label: string; next: RequestStatus | "complete" }> = {
+    Assigned: { label: t.cta.startWork, next: "In Progress" },
+    "In Progress": { label: t.cta.markComplete, next: "complete" },
+    "Waiting for Parts": { label: t.cta.resume, next: "In Progress" },
+  };
+
+  const STAGE_LABEL: Record<string, string> = {
+    Assigned: t.stage.Assigned,
+    "In Progress": t.stage["In Progress"],
+    "Waiting for Parts": t.stage["Waiting for Parts"],
+  };
 
   const groups = useMemo(() => {
     const overdue: MyJobRow[] = [];
@@ -52,15 +57,15 @@ export function MyJobsView({ jobs, slaHours }: { jobs: MyJobRow[]; slaHours: Rec
       else today.push(j);
     }
     return [
-      { label: "Overdue", items: overdue },
-      { label: "Today", items: today },
-      { label: "Waiting on parts", items: parts },
+      { key: "overdue" as GroupKey, label: t.overdue, items: overdue },
+      { key: "today" as GroupKey, label: t.dueToday, items: today },
+      { key: "parts" as GroupKey, label: t.waitingOnParts, items: parts },
     ];
-  }, [jobs, slaHours]);
+  }, [jobs, slaHours, t]);
 
-  const overdueCount = groups.find((g) => g.label === "Overdue")?.items.length ?? 0;
-  const todayCount = groups.find((g) => g.label === "Today")?.items.length ?? 0;
-  const partsCount = groups.find((g) => g.label === "Waiting on parts")?.items.length ?? 0;
+  const overdueCount = groups.find((g) => g.key === "overdue")?.items.length ?? 0;
+  const todayCount = groups.find((g) => g.key === "today")?.items.length ?? 0;
+  const partsCount = groups.find((g) => g.key === "parts")?.items.length ?? 0;
 
   async function handleCta(job: MyJobRow) {
     const cta = CTA[job.status];
@@ -71,7 +76,7 @@ export function MyJobsView({ jobs, slaHours }: { jobs: MyJobRow[]; slaHours: Rec
       if (cta.next === "complete") await completeJob(job.id);
       else await updateJobStage(job.id, cta.next);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not update this job.");
+      setError(e instanceof Error ? e.message : t.updateError);
     } finally {
       setPendingId(null);
     }
@@ -82,16 +87,16 @@ export function MyJobsView({ jobs, slaHours }: { jobs: MyJobRow[]; slaHours: Rec
       <div className="flex w-full flex-none flex-col gap-6 border-b border-black/[.08] bg-panel px-[18px] py-5 md:w-[220px] md:border-b-0 md:border-r">
         <div className="flex flex-col gap-2">
           <span className="font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-eyebrow">
-            Overview
+            {t.overview}
           </span>
-          <Row label="Due today" value={todayCount} />
-          <Row label="Overdue" value={overdueCount} tone="text-urgent" />
-          <Row label="Waiting on parts" value={partsCount} />
+          <Row label={t.dueToday} value={todayCount} />
+          <Row label={t.overdue} value={overdueCount} tone="text-urgent" />
+          <Row label={t.waitingOnParts} value={partsCount} />
         </div>
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <PageHeader title="My jobs" subtitle={`${jobs.length} active`} />
+        <PageHeader title={dict.maintenance.nav.myJobs} subtitle={t.subtitle(jobs.length)} />
         <div className="flex flex-1 flex-col gap-6 overflow-auto bg-canvas p-4 sm:p-6">
           {error && (
             <p className="text-sm text-red-700" role="alert">
@@ -101,16 +106,16 @@ export function MyJobsView({ jobs, slaHours }: { jobs: MyJobRow[]; slaHours: Rec
           {groups
             .filter((g) => g.items.length)
             .map((group) => (
-              <div key={group.label} className="flex flex-col gap-[9px]">
+              <div key={group.key} className="flex flex-col gap-[9px]">
                 <div className="flex items-center gap-2">
-                  <span className={`text-[13px] font-semibold ${GROUP_TONE[group.label]}`}>
+                  <span className={`text-[13px] font-semibold ${GROUP_TONE[group.key]}`}>
                     {group.label}
                   </span>
                   <span className="font-mono text-xs text-eyebrow">{group.items.length}</span>
                 </div>
                 {group.items.map((j) => {
                   const due = dueAt(j.created_at, j.priority, slaHours);
-                  const overdue = group.label === "Overdue";
+                  const overdue = group.key === "overdue";
                   const cta = CTA[j.status];
                   return (
                     <JobCard
@@ -126,14 +131,14 @@ export function MyJobsView({ jobs, slaHours }: { jobs: MyJobRow[]; slaHours: Rec
                             {STAGE_LABEL[j.status] ?? j.status}
                           </span>
                           <span className={`font-mono text-[11.5px] ${overdue ? "text-urgent" : "text-eyebrow"}`}>
-                            due {relativeTime(due.toISOString())}
+                            {t.due(relativeTime(due.toISOString(), dict.common.time))}
                           </span>
                         </>
                       }
                       actions={
-                        <>
+                        <div className="flex flex-col gap-2">
                           <Link href={`/maintenance/jobs/${j.id}`} className={buttonClasses("outline")}>
-                            Update
+                            {t.update}
                           </Link>
                           {cta && (
                             <button
@@ -141,10 +146,10 @@ export function MyJobsView({ jobs, slaHours }: { jobs: MyJobRow[]; slaHours: Rec
                               disabled={pendingId === j.id}
                               className={buttonClasses("primary")}
                             >
-                              {pendingId === j.id ? "Saving…" : cta.label}
+                              {pendingId === j.id ? t.saving : cta.label}
                             </button>
                           )}
-                        </>
+                        </div>
                       }
                     />
                   );
@@ -152,7 +157,7 @@ export function MyJobsView({ jobs, slaHours }: { jobs: MyJobRow[]; slaHours: Rec
               </div>
             ))}
           {jobs.length === 0 && (
-            <div className="px-4 py-8 text-center text-sm text-meta">No active jobs.</div>
+            <div className="px-4 py-8 text-center text-sm text-meta">{t.noActiveJobs}</div>
           )}
         </div>
       </div>

@@ -9,6 +9,7 @@ import { TextArea } from "@/components/ui/inputs";
 import { relativeTime } from "@/lib/date";
 import { addRequestComment } from "@/app/actions/comments";
 import type { Priority } from "@/lib/theme";
+import { useDictionary } from "@/lib/i18n/language-provider";
 
 export type RequestDetailData = {
   id: string;
@@ -47,9 +48,14 @@ export function RequestDetail({
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dict = useDictionary();
+  const t = dict.staff.requestDetail;
 
   const [title, ...rest] = request.description.split("\n");
   const details = rest.join("\n");
+
+  const statusLabel =
+    dict.common.status[request.status as keyof typeof dict.common.status] ?? request.status;
 
   async function handleComment() {
     if (!comment.trim()) return;
@@ -59,7 +65,7 @@ export function RequestDetail({
       await addRequestComment(request.id, comment.trim());
       setComment("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not post comment.");
+      setError(e instanceof Error ? e.message : t.commentError);
     } finally {
       setBusy(false);
     }
@@ -69,7 +75,7 @@ export function RequestDetail({
     <div className="flex flex-1 flex-col">
       <div className="flex h-[70px] flex-none items-center gap-[14px] border-b border-black/[.08] px-7">
         <Link href="/staff" className="text-[13px] text-meta">
-          My requests
+          {dict.staff.nav.myRequests}
         </Link>
         <span className="text-[13px] text-hairline">/</span>
         <div className="flex flex-col gap-1">
@@ -81,7 +87,8 @@ export function RequestDetail({
             {request.priority === "Urgent" && <UrgentTag />}
           </div>
           <span className="font-mono text-xs text-meta">
-            {request.homeName} · raised by {request.reporterName} · {relativeTime(request.created_at)}
+            {request.homeName} · {t.raisedBy} {request.reporterName} ·{" "}
+            {relativeTime(request.created_at, dict.common.time)}
           </span>
         </div>
       </div>
@@ -95,27 +102,27 @@ export function RequestDetail({
           )}
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
             <div className="flex items-center justify-between">
-              <Eyebrow>Progress</Eyebrow>
+              <Eyebrow>{t.progress}</Eyebrow>
               <span className="font-mono text-[11.5px] text-eyebrow">
-                {request.status} · updated {relativeTime(request.updated_at)}
+                {statusLabel} · {t.updated} {relativeTime(request.updated_at, dict.common.time)}
               </span>
             </div>
             <Stepper activeIndex={STEP_INDEX[request.status] ?? 0} />
             <span className="text-[13px] text-subtle">
               {request.assigneeName
-                ? `Assigned to ${request.assigneeName}`
-                : "Not yet assigned to a maintenance worker"}
+                ? t.assignedTo(request.assigneeName)
+                : t.notAssigned}
             </span>
           </div>
 
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
-            <Eyebrow>Reported issue</Eyebrow>
+            <Eyebrow>{t.reportedIssue}</Eyebrow>
             <p className="max-w-[62ch] text-sm leading-[1.6] text-body">{details || title}</p>
             <span className="font-mono text-[11.5px] text-eyebrow">{request.category}</span>
           </div>
 
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
-            <Eyebrow>Photos</Eyebrow>
+            <Eyebrow>{t.photos}</Eyebrow>
             <div className="flex flex-wrap gap-[10px]">
               {photos.map((p) => (
                 <a key={p.id} href={p.url} target="_blank" rel="noreferrer">
@@ -127,14 +134,14 @@ export function RequestDetail({
                   />
                 </a>
               ))}
-              {photos.length === 0 && <span className="text-sm text-meta">No photos yet.</span>}
+              {photos.length === 0 && <span className="text-sm text-meta">{t.noPhotosYet}</span>}
             </div>
           </div>
         </div>
 
         <div className="flex w-[390px] flex-none flex-col border-l border-black/[.08]">
           <div className="flex items-center justify-between border-b border-black/[.07] px-[22px] py-4">
-            <span className="text-[13px] font-semibold text-ink">Activity</span>
+            <span className="text-[13px] font-semibold text-ink">{t.activity}</span>
           </div>
           <div className="flex flex-1 flex-col gap-[18px] overflow-auto px-[22px] py-[18px]">
             {activity.map((a) => (
@@ -144,7 +151,7 @@ export function RequestDetail({
                   <div className="flex items-baseline gap-[7px]">
                     <span className="text-[12.5px] font-medium text-ink">{a.authorName}</span>
                     <span className="font-mono text-[11px] text-eyebrow">
-                      {relativeTime(a.created_at)}
+                      {relativeTime(a.created_at, dict.common.time)}
                     </span>
                   </div>
                   <span className="text-[13px] leading-[1.55] text-muted">{a.message}</span>
@@ -152,14 +159,14 @@ export function RequestDetail({
               </div>
             ))}
             {activity.length === 0 && (
-              <span className="text-sm text-meta">No activity yet.</span>
+              <span className="text-sm text-meta">{t.noActivityYet}</span>
             )}
           </div>
           <div className="flex flex-col gap-[9px] border-t border-black/[.07] px-[22px] py-4">
             <TextArea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Add a comment for maintenance…"
+              placeholder={t.commentPlaceholder}
               className="h-16"
             />
             <div className="flex items-center justify-end">
@@ -168,7 +175,7 @@ export function RequestDetail({
                 disabled={busy || !comment.trim()}
                 className={buttonClasses("primary")}
               >
-                Comment
+                {t.commentButton}
               </button>
             </div>
           </div>

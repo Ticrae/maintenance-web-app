@@ -7,9 +7,11 @@ import { Avatar } from "@/components/ui/misc";
 import { TextField, Select } from "@/components/ui/inputs";
 import { RoleChip } from "@/components/ui/badges";
 import { tableWrapClass, tableHeadRowClass, tableRowClass } from "@/components/ui/table";
-import { ROLE_LABEL, type Role } from "@/lib/theme";
+import type { Role } from "@/lib/theme";
 import { formatDate } from "@/lib/date";
 import { inviteUser, updateUser, updateUserRole, deleteUser, type UserFormState } from "@/app/actions/users";
+import { useDictionary } from "@/lib/i18n/language-provider";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 export type UserRow = {
   id: string;
@@ -29,8 +31,8 @@ export type HomeOption = { id: string; name: string; agency_id: string };
 const ROLES: Role[] = ["staff", "maintenance", "agency_admin", "super_admin"];
 const GRID_COLS = "grid-cols-[36px_minmax(180px,1fr)_190px_150px_140px_140px_100px_130px]";
 
-function displayName(u: { first_name: string | null; last_name: string | null }) {
-  return [u.first_name, u.last_name].filter(Boolean).join(" ") || "Unnamed";
+function displayName(u: { first_name: string | null; last_name: string | null }, dict: Dictionary) {
+  return [u.first_name, u.last_name].filter(Boolean).join(" ") || dict.common.unnamed;
 }
 
 export function UsersTable({
@@ -50,14 +52,16 @@ export function UsersTable({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
+  const dict = useDictionary();
+  const t = dict.admin.users;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return users;
     return users.filter(
-      (u) => displayName(u).toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+      (u) => displayName(u, dict).toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
     );
-  }, [users, search]);
+  }, [users, search, dict]);
 
   async function handleRoleChange(userId: string, role: string) {
     setRowError(null);
@@ -65,7 +69,7 @@ export function UsersTable({
     try {
       await updateUserRole(userId, role);
     } catch (e) {
-      setRowError(e instanceof Error ? e.message : "Could not update role.");
+      setRowError(e instanceof Error ? e.message : t.updateRoleError);
     } finally {
       setPendingId(null);
     }
@@ -78,7 +82,7 @@ export function UsersTable({
       await deleteUser(userId);
       setConfirmDeleteId(null);
     } catch (e) {
-      setRowError(e instanceof Error ? e.message : "Could not delete user.");
+      setRowError(e instanceof Error ? e.message : t.deleteUserError);
     } finally {
       setPendingId(null);
     }
@@ -87,17 +91,17 @@ export function UsersTable({
   return (
     <div className="flex flex-1 flex-col overflow-auto">
       <PageHeader
-        title="Users"
-        subtitle="Everyone with access, across all agencies"
+        title={t.title}
+        subtitle={t.subtitle}
         actions={
           <>
             <TextField
-              placeholder="Search name or email…"
+              placeholder={t.searchPlaceholder}
               className="w-full sm:w-[240px]"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <Button onClick={() => setInviting(true)}>Invite user</Button>
+            <Button onClick={() => setInviting(true)}>{t.inviteUser}</Button>
           </>
         }
       />
@@ -110,13 +114,13 @@ export function UsersTable({
         <div className={tableWrapClass}>
           <div className={`${tableHeadRowClass} ${GRID_COLS}`}>
             <span />
-            <span>Name</span>
-            <span>Email</span>
-            <span>Role</span>
-            <span>Agency</span>
-            <span>Home</span>
-            <span>Created</span>
-            <span>Actions</span>
+            <span>{dict.common.table.name}</span>
+            <span>{dict.common.table.email}</span>
+            <span>{dict.common.table.role}</span>
+            <span>{dict.common.table.agency}</span>
+            <span>{t.homeLabel}</span>
+            <span>{t.created}</span>
+            <span>{dict.common.table.actions}</span>
           </div>
           {filtered.map((u) => {
             const agency = agencies.find((a) => a.id === u.agency_id);
@@ -125,12 +129,12 @@ export function UsersTable({
             return (
               <div key={u.id} className={`${tableRowClass} ${GRID_COLS}`}>
                 <Avatar
-                  initials={displayName(u).split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                  initials={displayName(u, dict).split(" ").map((n) => n[0]).join("").slice(0, 2)}
                   size={26}
                 />
                 <span className="truncate pr-3 text-[13.5px] font-medium text-ink">
-                  {displayName(u)}
-                  {isSelf && <span className="ml-2 font-mono text-[10.5px] text-eyebrow">you</span>}
+                  {displayName(u, dict)}
+                  {isSelf && <span className="ml-2 font-mono text-[10.5px] text-eyebrow">{t.you}</span>}
                 </span>
                 <span className="truncate pr-3 font-mono text-[11.5px] text-eyebrow">{u.email}</span>
                 <div className="flex flex-col gap-1">
@@ -143,7 +147,7 @@ export function UsersTable({
                   >
                     {ROLES.map((r) => (
                       <option key={r} value={r}>
-                        {ROLE_LABEL[r]}
+                        {dict.common.role[r]}
                       </option>
                     ))}
                   </Select>
@@ -158,7 +162,7 @@ export function UsersTable({
                     onClick={() => setEditing(u)}
                     className="text-xs font-medium text-link hover:underline"
                   >
-                    Edit
+                    {dict.common.edit}
                   </button>
                   {confirmDeleteId === u.id ? (
                     <div className="flex items-center gap-1">
@@ -167,13 +171,13 @@ export function UsersTable({
                         disabled={pendingId === u.id}
                         className="text-xs font-medium text-urgent hover:underline"
                       >
-                        Confirm
+                        {dict.common.confirm}
                       </button>
                       <button
                         onClick={() => setConfirmDeleteId(null)}
                         className="text-xs text-meta hover:underline"
                       >
-                        Cancel
+                        {dict.common.cancel}
                       </button>
                     </div>
                   ) : (
@@ -182,7 +186,7 @@ export function UsersTable({
                       disabled={isSelf}
                       className="text-xs font-medium text-urgent hover:underline disabled:cursor-not-allowed disabled:text-eyebrow disabled:no-underline"
                     >
-                      Delete
+                      {dict.common.delete}
                     </button>
                   )}
                 </div>
@@ -190,7 +194,7 @@ export function UsersTable({
             );
           })}
           {filtered.length === 0 && (
-            <div className="px-4 py-8 text-center text-sm text-meta">No users match.</div>
+            <div className="px-4 py-8 text-center text-sm text-meta">{t.noMatch}</div>
           )}
         </div>
       </div>
@@ -237,6 +241,8 @@ function UserDrawer({
   );
   const [agencyId, setAgencyId] = useState(user?.agency_id ?? "");
   const eligibleHomes = homes.filter((h) => h.agency_id === agencyId);
+  const dict = useDictionary();
+  const t = dict.admin.users;
 
   useEffect(() => {
     if (state && !state.error) onClose();
@@ -249,7 +255,7 @@ function UserDrawer({
       <div className="fixed right-0 top-0 z-20 flex h-full w-full flex-col gap-5 bg-surface p-4 shadow-[-12px_0_28px_rgba(0,0,0,.09)] sm:w-[380px] sm:p-6">
         <div className="flex items-center justify-between">
           <span className="text-base font-semibold text-ink">
-            {mode === "invite" ? "Invite user" : "Edit user"}
+            {mode === "invite" ? t.inviteUserTitle : t.editUserTitle}
           </span>
           <button onClick={onClose} className="text-lg text-meta hover:text-muted">
             ×
@@ -258,42 +264,42 @@ function UserDrawer({
         <form action={formAction} className="flex flex-1 flex-col gap-4 overflow-auto">
           {mode === "invite" && (
             <div className="flex flex-col gap-[7px]">
-              <label className="text-[13px] font-medium text-body">Email</label>
+              <label className="text-[13px] font-medium text-body">{dict.common.table.email}</label>
               <TextField type="email" name="email" required placeholder="name@organisation.com" />
             </div>
           )}
           <div className="flex gap-[14px]">
             <div className="flex flex-1 flex-col gap-[7px]">
-              <label className="text-[13px] font-medium text-body">First name</label>
+              <label className="text-[13px] font-medium text-body">{t.firstName}</label>
               <TextField name="first_name" defaultValue={user?.first_name ?? ""} />
             </div>
             <div className="flex flex-1 flex-col gap-[7px]">
-              <label className="text-[13px] font-medium text-body">Last name</label>
+              <label className="text-[13px] font-medium text-body">{t.lastName}</label>
               <TextField name="last_name" defaultValue={user?.last_name ?? ""} />
             </div>
           </div>
           <div className="flex flex-col gap-[7px]">
-            <label className="text-[13px] font-medium text-body">Phone</label>
+            <label className="text-[13px] font-medium text-body">{t.phone}</label>
             <TextField name="phone" defaultValue={user?.phone ?? ""} />
           </div>
           <div className="flex flex-col gap-[7px]">
-            <label className="text-[13px] font-medium text-body">Role</label>
+            <label className="text-[13px] font-medium text-body">{t.role}</label>
             <Select name="role" defaultValue={user?.role ?? "staff"}>
               {ROLES.map((r) => (
                 <option key={r} value={r}>
-                  {ROLE_LABEL[r]}
+                  {dict.common.role[r]}
                 </option>
               ))}
             </Select>
           </div>
           <div className="flex flex-col gap-[7px]">
-            <label className="text-[13px] font-medium text-body">Agency</label>
+            <label className="text-[13px] font-medium text-body">{dict.common.table.agency}</label>
             <Select
               name="agency_id"
               value={agencyId}
               onChange={(e) => setAgencyId(e.target.value)}
             >
-              <option value="">No agency</option>
+              <option value="">{t.noAgency}</option>
               {agencies.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
@@ -302,9 +308,9 @@ function UserDrawer({
             </Select>
           </div>
           <div className="flex flex-col gap-[7px]">
-            <label className="text-[13px] font-medium text-body">Home</label>
+            <label className="text-[13px] font-medium text-body">{t.homeLabel}</label>
             <Select name="home_id" defaultValue={user?.home_id ?? ""}>
-              <option value="">No home</option>
+              <option value="">{t.noHome}</option>
               {eligibleHomes.map((h) => (
                 <option key={h.id} value={h.id}>
                   {h.name}
@@ -321,10 +327,10 @@ function UserDrawer({
 
           <div className="mt-auto flex gap-[10px]">
             <button type="button" onClick={onClose} className={buttonClasses("outline", "flex-1")}>
-              Cancel
+              {dict.common.cancel}
             </button>
             <button type="submit" disabled={isPending} className={buttonClasses("primary", "flex-1")}>
-              {isPending ? "Saving…" : mode === "invite" ? "Send invite" : "Save changes"}
+              {isPending ? dict.common.saving : mode === "invite" ? t.sendInvite : t.saveChanges}
             </button>
           </div>
         </form>

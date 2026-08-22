@@ -1,3 +1,7 @@
+"use client";
+
+import { useDictionary } from "@/lib/i18n/language-provider";
+
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <span className="font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-eyebrow">
@@ -19,7 +23,9 @@ export function Avatar({
   } as const;
 
   return (
-    <div className={`flex flex-none items-center justify-center rounded-full bg-track font-semibold text-subtle ${sizes[size]}`}>
+    <div
+      className={`flex flex-none items-center justify-center rounded-full bg-track font-semibold text-subtle ${sizes[size]}`}
+    >
       {initials}
     </div>
   );
@@ -48,7 +54,9 @@ export function StatTile({
       >
         {value}
       </span>
-      {context && <span className="font-mono text-[11.5px] text-meta">{context}</span>}
+      {context && (
+        <span className="font-mono text-[11.5px] text-meta">{context}</span>
+      )}
     </div>
   );
 }
@@ -74,30 +82,36 @@ export function PhotoPlaceholder({
 }
 
 export function AddPhotoTile({
-  label = "Add photo",
-  hint = "drag or browse",
+  label,
+  hint,
   className = "",
 }: {
   label?: string;
   hint?: string;
   className?: string;
 }) {
+  const dict = useDictionary();
   return (
     <div
       className={`flex flex-col items-center justify-center gap-[5px] rounded-md border border-dashed border-black/[.2] ${className}`}
     >
-      <span className="text-[13px] font-medium text-muted">{label}</span>
-      <span className="font-mono text-[10.5px] text-eyebrow">{hint}</span>
+      <span className="text-[13px] font-medium text-muted">{label ?? dict.common.addPhoto.label}</span>
+      <span className="font-mono text-[10.5px] text-eyebrow">{hint ?? dict.common.addPhoto.hint}</span>
     </div>
   );
 }
 
-const STEPS = ["Reported", "Accepted", "On site", "Parts ordered", "Completed"] as const;
-
 export function Stepper({ activeIndex }: { activeIndex: number }) {
+  const dict = useDictionary();
+  const steps = [
+    dict.common.progressSteps.reported,
+    dict.common.progressSteps.accepted,
+    dict.common.progressSteps.onSite,
+    dict.common.progressSteps.completed,
+  ];
   return (
     <div className="flex items-center">
-      {STEPS.map((step, i) => (
+      {steps.map((step, i) => (
         <div key={step} className="flex flex-1 items-center">
           <div className="flex flex-1 flex-col gap-[7px]">
             <div
@@ -113,7 +127,7 @@ export function Stepper({ activeIndex }: { activeIndex: number }) {
               {step}
             </span>
           </div>
-          {i < STEPS.length - 1 && <div className="w-[10px]" />}
+          {i < steps.length - 1 && <div className="w-[10px]" />}
         </div>
       ))}
     </div>

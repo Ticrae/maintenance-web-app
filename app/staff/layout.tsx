@@ -3,12 +3,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getHomes } from "@/app/actions/homes";
 import { nowMs } from "@/lib/date";
 import { StaffSidebar } from "./staff-sidebar";
+import { MobileUserBar } from "@/components/sidebar";
+import { SignOutButton } from "@/components/sign-out-button";
+import { getServerDictionary } from "@/lib/i18n/server";
 
 export default async function StaffLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const dict = await getServerDictionary();
+  const t = dict.staff.layout;
   const supabase = await createClient();
   const {
     data: { user },
@@ -49,10 +54,17 @@ export default async function StaffLayout({
         .gte("created_at", dayAgo)
     : { count: 0 };
 
-  const name = profile?.first_name || "You";
+  const name = profile?.first_name || t.you;
+  const initials =
+    name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2) || "?";
+  const subtitle = home?.name ?? t.noHomeAssigned;
 
   return (
-    <div className="flex min-h-screen w-full md:h-screen">
+    <div className="staff-shell flex min-h-screen w-full flex-col md:h-screen md:flex-row">
       <StaffSidebar
         totalRequests={rows.length}
         openCount={openCount}
@@ -60,16 +72,18 @@ export default async function StaffLayout({
         completedCount={completedCount}
         recentActivityCount={recentComments ?? 0}
         name={name}
-        subtitle={home?.name ?? "No home assigned"}
-        initials={
-          name
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .slice(0, 2) || "?"
-        }
+        subtitle={subtitle}
+        initials={initials}
       />
-      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {children}
+        <MobileUserBar
+          initials={initials}
+          name={name}
+          subtitle={subtitle}
+          actions={<SignOutButton inverted />}
+        />
+      </div>
     </div>
   );
 }

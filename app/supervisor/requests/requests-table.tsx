@@ -10,6 +10,8 @@ import { TextField, Select } from "@/components/ui/inputs";
 import { tableWrapClass, tableHeadRowClass, tableRowClass } from "@/components/ui/table";
 import type { Priority } from "@/lib/theme";
 import { assignRequest, type RequestStatus } from "@/app/actions/requests";
+import { useDictionary } from "@/lib/i18n/language-provider";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 export type RequestRow = {
   id: string;
@@ -38,8 +40,8 @@ const STATUSES: (RequestStatus | "All")[] = [
 const PRIORITIES: (Priority | "All")[] = ["All", "Urgent", "High", "Medium", "Low"];
 const GRID_COLS = "grid-cols-[84px_minmax(220px,1fr)_140px_110px_90px_100px_160px_130px]";
 
-function assigneeName(a: Assignee) {
-  return [a.first_name, a.last_name].filter(Boolean).join(" ") || "Unnamed";
+function assigneeName(a: Assignee, dict: Dictionary) {
+  return [a.first_name, a.last_name].filter(Boolean).join(" ") || dict.common.unnamed;
 }
 
 export function SupervisorRequestsTable({
@@ -56,6 +58,8 @@ export function SupervisorRequestsTable({
   const [priorityFilter, setPriorityFilter] = useState<Priority | "All">("All");
   const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const dict = useDictionary();
+  const t = dict.supervisor.requests;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -84,7 +88,7 @@ export function SupervisorRequestsTable({
       try {
         await assignRequest(requestId, userId);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not assign this request.");
+        setError(e instanceof Error ? e.message : t.assignError);
       }
     });
   }
@@ -92,28 +96,28 @@ export function SupervisorRequestsTable({
   return (
     <div className="flex flex-1 flex-col overflow-auto">
       <PageHeader
-        title="Requests"
-        subtitle="Every request across your homes"
+        title={t.title}
+        subtitle={t.subtitle}
         actions={
           <>
             <TextField
-              placeholder="Search description or home…"
+              placeholder={t.searchPlaceholder}
               className="w-full sm:w-[260px]"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
             <Link href="/supervisor" className={buttonClasses("outline")}>
-              Overview
+              {t.overview}
             </Link>
           </>
         }
       />
       <div className="flex flex-1 flex-col gap-4 bg-canvas p-4 sm:p-7">
         <div className="flex flex-wrap gap-3">
-          <StatTile label="Total requests" value={requests.length} />
-          <StatTile label="Open" value={openCount} />
-          <StatTile label="Urgent open" value={urgentOpen} valueClassName="text-urgent" />
-          <StatTile label="Unassigned" value={unassigned} />
+          <StatTile label={dict.common.stat.totalRequests} value={requests.length} />
+          <StatTile label={dict.common.stat.open} value={openCount} />
+          <StatTile label={dict.common.stat.urgentOpen} value={urgentOpen} valueClassName="text-urgent" />
+          <StatTile label={dict.common.stat.unassigned} value={unassigned} />
         </div>
 
         {error && (
@@ -134,7 +138,7 @@ export function SupervisorRequestsTable({
                     : "border border-black/[.14] text-muted"
                 }`}
               >
-                {s}
+                {s === "All" ? dict.common.all : dict.common.status[s]}
               </button>
             ))}
           </div>
@@ -149,7 +153,7 @@ export function SupervisorRequestsTable({
                     : "border border-black/[.14] text-muted"
                 }`}
               >
-                {p}
+                {p === "All" ? dict.common.all : dict.common.priority[p]}
               </button>
             ))}
           </div>
@@ -157,14 +161,14 @@ export function SupervisorRequestsTable({
 
         <div className={tableWrapClass}>
           <div className={`${tableHeadRowClass} ${GRID_COLS}`}>
-            <span>Ref</span>
-            <span>Issue</span>
-            <span>Home</span>
-            <span>Category</span>
-            <span>Priority</span>
-            <span>Status</span>
-            <span>Assigned to</span>
-            <span>Reported by</span>
+            <span>{dict.common.table.ref}</span>
+            <span>{dict.common.table.issue}</span>
+            <span>{dict.common.table.home}</span>
+            <span>{dict.common.table.category}</span>
+            <span>{dict.common.table.priority}</span>
+            <span>{dict.common.table.status}</span>
+            <span>{dict.common.table.assignedTo}</span>
+            <span>{dict.common.table.reportedBy}</span>
           </div>
           {filtered.map((r) => (
             <div key={r.id} className={`${tableRowClass} ${GRID_COLS}`}>
@@ -177,16 +181,16 @@ export function SupervisorRequestsTable({
               <span className="truncate pr-3 text-[13px] text-subtle">{r.homes?.name ?? "—"}</span>
               <span className="truncate pr-3 text-[13px] text-subtle">{r.category}</span>
               <PriorityBadge priority={r.priority} />
-              <span className="text-[12.5px] font-medium text-ink">{r.status}</span>
+              <span className="text-[12.5px] font-medium text-ink">{dict.common.status[r.status]}</span>
               <Select
                 value={r.assigned_to ?? ""}
                 className="h-8 text-xs"
                 onChange={(e) => handleAssign(r.id, e.target.value || null)}
               >
-                <option value="">Unassigned</option>
+                <option value="">{dict.common.unassigned}</option>
                 {assignees.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {assigneeName(a)}
+                    {assigneeName(a, dict)}
                   </option>
                 ))}
               </Select>
@@ -196,7 +200,7 @@ export function SupervisorRequestsTable({
             </div>
           ))}
           {filtered.length === 0 && (
-            <div className="px-4 py-8 text-center text-sm text-meta">No requests match.</div>
+            <div className="px-4 py-8 text-center text-sm text-meta">{t.noMatch}</div>
           )}
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getServerDictionary } from "@/lib/i18n/server";
 import {
   JobDetail,
   type JobDetailData,
@@ -11,6 +12,7 @@ export default async function JobDetailPage(
   props: PageProps<"/maintenance/jobs/[ref]">,
 ) {
   const { ref } = await props.params;
+  const dict = await getServerDictionary();
   const admin = createAdminClient();
 
   const { data: request } = await admin
@@ -80,7 +82,7 @@ export default async function JobDetailPage(
     homeAddress: request.homes?.address ?? null,
     reporterName:
       [reporter?.first_name, reporter?.last_name].filter(Boolean).join(" ") ||
-      "Unknown",
+      dict.maintenance.jobDetail.unknownReporter,
   };
 
   const activity: CommentItem[] = (comments ?? []).map((c) => ({
@@ -90,7 +92,7 @@ export default async function JobDetailPage(
     authorName:
       [c.profiles?.first_name, c.profiles?.last_name]
         .filter(Boolean)
-        .join(" ") || "Unknown",
+        .join(" ") || dict.maintenance.jobDetail.unknownReporter,
   }));
 
   return <JobDetail job={job} activity={activity} photos={photos ?? []} />;

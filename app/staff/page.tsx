@@ -1,9 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getHomes } from "@/app/actions/homes";
+import { getServerDictionary } from "@/lib/i18n/server";
 import { MyRequestsTable, type StaffRequestRow } from "./requests-table";
 
-export default async function MyRequestsPage() {
+export default async function MyRequestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const { status } = await searchParams;
+  const dict = await getServerDictionary();
   const supabase = await createClient();
   const {
     data: { user },
@@ -59,8 +66,9 @@ export default async function MyRequestsPage() {
   return (
     <MyRequestsTable
       requests={withPhotos}
-      homeName={home?.name ?? "No home assigned"}
+      homeName={home?.name ?? dict.staff.layout.noHomeAssigned}
       avgResponseMs={avgResponseMs}
+      statusFilter={status}
     />
   );
 }

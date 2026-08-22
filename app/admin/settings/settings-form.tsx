@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/inputs";
 import { Eyebrow } from "@/components/ui/misc";
 import { updateSettings } from "@/app/actions/settings";
+import { useDictionary } from "@/lib/i18n/language-provider";
 
 export type AppSettings = {
   categories: string[];
@@ -19,17 +20,19 @@ export function SettingsForm({ settings }: { settings: AppSettings | null }) {
   const [state, formAction, isPending] = useActionState(updateSettings, undefined);
   const [categories, setCategories] = useState<string[]>(settings?.categories ?? []);
   const [draft, setDraft] = useState("");
+  const dict = useDictionary();
+  const t = dict.admin.settings;
 
   if (!settings) {
     return (
       <div className="flex flex-1 flex-col overflow-auto">
-        <PageHeader title="Settings" subtitle="Platform-wide configuration" />
+        <PageHeader title={t.title} subtitle={t.subtitle} />
         <div className="p-4 text-sm text-meta sm:p-7">
-          Settings haven&apos;t been initialized yet. Run{" "}
+          {t.notInitialized}{" "}
           <code className="rounded bg-chip px-1 py-[2px] font-mono text-xs">
             supabase/migrations/0001_app_settings.sql
           </code>{" "}
-          in the Supabase SQL editor, then reload this page.
+          {t.notInitializedSuffix}
         </div>
       </div>
     );
@@ -47,14 +50,14 @@ export function SettingsForm({ settings }: { settings: AppSettings | null }) {
 
   return (
     <div className="flex flex-1 flex-col overflow-auto">
-      <PageHeader title="Settings" subtitle="Platform-wide configuration" />
+      <PageHeader title={t.title} subtitle={t.subtitle} />
       <form action={formAction} className="flex flex-1 flex-col gap-6 bg-canvas p-4 sm:p-7">
         <input type="hidden" name="categories" value={categories.join(",")} />
 
         <div className="flex flex-col gap-3 rounded-lg border border-black/[.09] bg-surface p-5">
-          <Eyebrow>Request categories</Eyebrow>
+          <Eyebrow>{t.requestCategories}</Eyebrow>
           <p className="text-[13px] text-subtle">
-            Options shown when staff submit a new maintenance request.
+            {t.categoriesHint}
           </p>
           <div className="flex flex-wrap gap-2">
             {categories.map((c) => (
@@ -84,24 +87,24 @@ export function SettingsForm({ settings }: { settings: AppSettings | null }) {
                   addCategory();
                 }
               }}
-              placeholder="Add a category…"
+              placeholder={t.addCategoryPlaceholder}
               className="w-full sm:w-[220px]"
             />
             <Button type="button" variant="outline" onClick={addCategory}>
-              Add
+              {dict.common.add}
             </Button>
           </div>
         </div>
 
         <div className="flex flex-col gap-3 rounded-lg border border-black/[.09] bg-surface p-5">
-          <Eyebrow>Response SLA targets</Eyebrow>
+          <Eyebrow>{t.slaTargets}</Eyebrow>
           <p className="text-[13px] text-subtle">
-            Hours-to-respond target per priority, used for report stats.
+            {t.slaHint}
           </p>
           <div className="flex gap-4">
             {PRIORITIES.map((p) => (
               <div key={p} className="flex flex-col gap-[7px]">
-                <label className="text-[13px] font-medium text-body">{p}</label>
+                <label className="text-[13px] font-medium text-body">{dict.common.priority[p]}</label>
                 <div className="flex items-center gap-2">
                   <TextField
                     type="number"
@@ -110,7 +113,7 @@ export function SettingsForm({ settings }: { settings: AppSettings | null }) {
                     defaultValue={settings.sla_hours[p] ?? ""}
                     className="w-20"
                   />
-                  <span className="text-xs text-meta">hrs</span>
+                  <span className="text-xs text-meta">{t.hours}</span>
                 </div>
               </div>
             ))}
@@ -125,7 +128,7 @@ export function SettingsForm({ settings }: { settings: AppSettings | null }) {
 
         <div>
           <Button type="submit" disabled={isPending}>
-            {isPending ? "Saving…" : "Save settings"}
+            {isPending ? dict.common.saving : t.saveSettings}
           </Button>
         </div>
       </form>

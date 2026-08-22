@@ -6,10 +6,13 @@ import { buttonClasses } from "@/components/ui/button";
 import { PriorityBadge } from "@/components/ui/badges";
 import { Eyebrow, StatTile } from "@/components/ui/misc";
 import { SignOutButton } from "@/components/sign-out-button";
+import { getServerDictionary } from "@/lib/i18n/server";
 
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
 export default async function SupervisorPage() {
+  const dict = await getServerDictionary();
+  const t = dict.supervisor.overview;
   const supabase = await createClient();
   const {
     data: { user },
@@ -43,7 +46,7 @@ export default async function SupervisorPage() {
     ? await admin.from("profiles").select("id, first_name, last_name").in("id", assigneeIds)
     : { data: [] };
   const assigneeMap = Object.fromEntries(
-    (assignees ?? []).map((a) => [a.id, [a.first_name, a.last_name].filter(Boolean).join(" ") || "Unnamed"])
+    (assignees ?? []).map((a) => [a.id, [a.first_name, a.last_name].filter(Boolean).join(" ") || dict.common.unnamed])
   );
 
   const urgentJobs = rows.filter((r) => r.priority === "Urgent");
@@ -54,12 +57,12 @@ export default async function SupervisorPage() {
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
       <PageHeader
-        title="Supervisor overview"
-        subtitle="Monitor active work and priorities across your homes"
+        title={t.title}
+        subtitle={t.subtitle}
         actions={
           <>
             <Link href="/supervisor/requests" className={buttonClasses("outline")}>
-              View all requests
+              {t.viewAllRequests}
             </Link>
             <SignOutButton />
           </>
@@ -68,21 +71,21 @@ export default async function SupervisorPage() {
       <main className="flex flex-1 flex-col gap-5 p-4 sm:p-7">
         <div className="flex flex-wrap gap-3">
           <StatTile
-            label="Open requests"
+            label={t.openRequests}
             value={rows.length}
-            context={`across ${(homes ?? []).length} homes`}
+            context={t.acrossHomes((homes ?? []).length)}
           />
           <StatTile
-            label="Urgent jobs"
+            label={t.urgentJobs}
             value={urgentJobs.length}
             valueClassName="text-urgent"
-            context="need attention"
+            context={t.needAttention}
           />
-          <StatTile label="Unassigned work" value={unassignedCount} context="awaiting allocation" />
+          <StatTile label={t.unassignedWork} value={unassignedCount} context={t.awaitingAllocation} />
         </div>
 
         <section className="flex flex-col gap-3 rounded-lg border border-black/[.09] bg-surface p-5">
-          <Eyebrow>Urgent work</Eyebrow>
+          <Eyebrow>{t.urgentWorkHeading}</Eyebrow>
           {urgentJobs.length ? (
             urgentJobs.map((job) => (
               <div
@@ -96,24 +99,24 @@ export default async function SupervisorPage() {
                   {job.description.split("\n")[0]}
                 </span>
                 <span className="text-[13px] text-subtle">
-                  {job.assigned_to ? assigneeMap[job.assigned_to] ?? "Unnamed" : "Unassigned"}
+                  {job.assigned_to ? assigneeMap[job.assigned_to] ?? dict.common.unnamed : dict.common.unassigned}
                 </span>
                 <PriorityBadge priority="Urgent" />
               </div>
             ))
           ) : (
-            <p className="text-sm text-meta">There are no urgent jobs right now.</p>
+            <p className="text-sm text-meta">{t.noUrgentJobs}</p>
           )}
         </section>
 
         <section className="flex flex-col gap-3 rounded-lg border border-black/[.09] bg-surface p-5">
-          <Eyebrow>Open requests by home</Eyebrow>
+          <Eyebrow>{t.openRequestsByHome}</Eyebrow>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {(homes ?? []).map((home) => (
               <div key={home.id} className="rounded-md border border-black/[.08] px-4 py-3">
                 <p className="text-[13px] font-medium text-ink">{home.name}</p>
                 <p className="mt-1 font-mono text-xs text-meta">
-                  {homeCounts[home.id] ?? 0} open requests
+                  {t.openRequestsCount(homeCounts[home.id] ?? 0)}
                 </p>
               </div>
             ))}

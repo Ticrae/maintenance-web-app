@@ -1,19 +1,29 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { getServerLocale } from "@/lib/i18n/server";
+import { LanguageProvider } from "@/lib/i18n/language-provider";
+import { LanguageToggle } from "@/components/language-toggle";
 
 export const metadata: Metadata = {
-  title: "Upkeep — Estate maintenance",
-  description: "Maintenance requests across care homes.",
+  title: "FixNest",
+  description: "Maintenance requests across homes.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getServerLocale();
+
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-canvas text-body">{children}</body>
+    <html lang={locale} className="h-full antialiased">
+      <body className="min-h-full flex flex-col bg-canvas text-body">
+        <LanguageProvider initialLocale={locale}>
+          {children}
+          <LanguageToggle />
+        </LanguageProvider>
+      </body>
     </html>
   );
 }

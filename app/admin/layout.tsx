@@ -2,14 +2,16 @@
 
 import { usePathname } from "next/navigation";
 import { TABS, TopTabs } from "@/components/top-tabs";
+import { AdminMobileNav } from "./admin-mobile-nav";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const active =
-    TABS.find((tab) => pathname.startsWith(tab.href))?.label ?? "Reports";
+    TABS.find((tab) => pathname.startsWith(tab.href))?.key ?? "reports";
 
   return (
-    <div className="flex min-h-screen w-full flex-col md:h-screen">
+    <div className="admin-shell flex min-h-screen w-full flex-col md:h-screen">
+      <AdminMobileNav active={active} />
       <TopTabs active={active} />
       <div className="flex min-h-0 flex-1">{children}</div>
     </div>

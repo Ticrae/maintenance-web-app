@@ -1,10 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getServerDictionary } from "@/lib/i18n/server";
 import { QueueView, type QueueRow } from "./queue-view";
 
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
 export default async function JobQueuePage() {
+  const dict = await getServerDictionary();
   const supabase = await createClient();
   const {
     data: { user },
@@ -51,7 +53,7 @@ export default async function JobQueuePage() {
     ? await admin.from("profiles").select("id, first_name, last_name").in("id", assigneeIds)
     : { data: [] };
   const assigneeMap = Object.fromEntries(
-    (assignees ?? []).map((a) => [a.id, [a.first_name, a.last_name].filter(Boolean).join(" ") || "Unnamed"])
+    (assignees ?? []).map((a) => [a.id, [a.first_name, a.last_name].filter(Boolean).join(" ") || dict.common.unnamed])
   );
 
   const queue: QueueRow[] = rows.map((r) => ({
@@ -63,7 +65,7 @@ export default async function JobQueuePage() {
     created_at: r.created_at,
     homeId: r.homes?.id ?? "",
     homeName: r.homes?.name ?? "—",
-    assigneeName: r.assigned_to ? assigneeMap[r.assigned_to] ?? "Unnamed" : null,
+    assigneeName: r.assigned_to ? assigneeMap[r.assigned_to] ?? dict.common.unnamed : null,
   }));
 
   return <QueueView queue={queue} homes={homes ?? []} />;

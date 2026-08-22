@@ -5,50 +5,80 @@ import Link from "next/link";
 import { AuthCard, AuthLogo, AuthSplitShell } from "@/components/auth-shell";
 import { TextField } from "@/components/ui/inputs";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
+import { useDictionary } from "@/lib/i18n/language-provider";
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
-  const [email, setEmail] = useState("d.amos@upkeep.care");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const dict = useDictionary();
+  const t = dict.auth.forgotPassword;
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    setLoading(true);
+    setError("");
+
+    const supabase = createClient();
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+
+    setSent(true);
+    setLoading(false);
+  }
 
   return (
     <AuthSplitShell>
       <AuthCard>
         <AuthLogo />
+
         {!sent ? (
           <>
             <div className="flex flex-col gap-1">
               <h1 className="text-2xl font-semibold tracking-[-.02em] text-ink">
-                Forgot your password?
+                {t.title}
               </h1>
+
               <p className="text-sm leading-[1.5] text-subtle">
-                Enter your work email and we&apos;ll send a link to set a new
-                one. The link expires after 60 minutes.
+                {t.subtitle}
               </p>
             </div>
-            <form
-              className="flex flex-col gap-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                setSent(true);
-              }}
-            >
+
+            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <div className="flex flex-col gap-[7px]">
                 <label className="text-[13px] font-medium text-body">
-                  Email
+                  {t.email}
                 </label>
+
                 <TextField
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Send reset link
+
+              {error && <p className="text-sm text-red-600">{error}</p>}
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? t.submitting : t.submit}
               </Button>
             </form>
+
             <Link href="/login" className="text-sm text-link">
-              ← Back to log in
+              {t.backToLogin}
             </Link>
           </>
         ) : (
@@ -56,27 +86,27 @@ export default function ForgotPasswordPage() {
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-success-bg text-success">
               ✓
             </div>
+
             <div className="flex flex-col gap-1">
               <h1 className="text-2xl font-semibold tracking-[-.02em] text-ink">
-                Check your email
+                {t.checkEmailTitle}
               </h1>
+
               <p className="text-sm leading-[1.5] text-subtle">
-                We sent a reset link to <strong className="text-ink">{email}</strong>.
-                Click the link to set a new password.
+                {t.checkEmailBody(email)}
               </p>
             </div>
+
             <div className="flex flex-col gap-1 rounded-md bg-panel px-4 py-3 text-[12.5px] leading-[1.5] text-meta">
-              <span>Nothing arrived?</span>
+              <span>{t.nothingArrived}</span>
+
               <span>
-                Check spam, or ask your estate admin to confirm the email on
-                your account.
+                {t.spamHint}
               </span>
             </div>
-            <Button variant="outline" className="w-full" disabled>
-              Resend link — available in 0:42
-            </Button>
+
             <Link href="/login" className="text-sm text-link">
-              ← Back to log in
+              {t.backToLogin}
             </Link>
           </>
         )}

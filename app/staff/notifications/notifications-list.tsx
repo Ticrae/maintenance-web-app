@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { Eyebrow } from "@/components/ui/misc";
 import { NotifTagBadge } from "@/components/ui/badges";
 import type { NotifTag } from "@/lib/theme";
+import { useDictionary } from "@/lib/i18n/language-provider";
 
 export type NotifItem = {
   id: string;
@@ -16,15 +17,17 @@ export type NotifItem = {
   day: string;
 };
 
-const FILTERS: { key: string; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "status", label: "Status changes" },
-  { key: "comment", label: "Comments" },
-  { key: "urgent", label: "Urgent" },
-];
-
 export function NotificationsList({ items, homeName }: { items: NotifItem[]; homeName: string }) {
   const [filter, setFilter] = useState("all");
+  const dict = useDictionary();
+  const t = dict.staff.notifications;
+
+  const FILTERS: { key: string; label: string }[] = [
+    { key: "all", label: dict.common.all },
+    { key: "status", label: t.filterStatus },
+    { key: "comment", label: t.filterComments },
+    { key: "urgent", label: t.filterUrgent },
+  ];
 
   const counts: Record<string, number> = {
     all: items.length,
@@ -45,7 +48,7 @@ export function NotificationsList({ items, homeName }: { items: NotifItem[]; hom
 
   return (
     <>
-      <PageHeader title="Notifications" subtitle={`Recent activity · ${homeName}`} />
+      <PageHeader title={dict.staff.nav.notifications} subtitle={t.subtitle(homeName)} />
       <div className="flex flex-1 flex-col gap-5 overflow-auto bg-canvas p-4 sm:p-7">
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
@@ -85,7 +88,7 @@ export function NotificationsList({ items, homeName }: { items: NotifItem[]; hom
         ))}
 
         {groups.length === 0 && (
-          <span className="py-2 text-sm text-meta">No recent activity.</span>
+          <span className="py-2 text-sm text-meta">{t.noRecentActivity}</span>
         )}
       </div>
     </>

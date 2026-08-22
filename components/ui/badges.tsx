@@ -1,7 +1,8 @@
+"use client";
+
 import {
   PRIORITY,
   ROLE_CHIP,
-  ROLE_LABEL,
   OUTCOME,
   NOTIF_TAG,
   type Priority,
@@ -9,14 +10,16 @@ import {
   type Outcome,
   type NotifTag,
 } from "@/lib/theme";
+import { useDictionary } from "@/lib/i18n/language-provider";
 
 export function PriorityBadge({ priority }: { priority: Priority }) {
   const c = PRIORITY[priority];
+  const dict = useDictionary();
   return (
     <span
       className={`inline-flex w-fit items-center rounded-[5px] px-[9px] py-[5px] text-[11.5px] font-medium ${c.bg} ${c.fg}`}
     >
-      {priority}
+      {dict.common.priority[priority]}
     </span>
   );
 }
@@ -31,33 +34,36 @@ export function UrgentTag() {
 
 export function RoleChip({ role }: { role: Role }) {
   const c = ROLE_CHIP[role];
+  const dict = useDictionary();
   return (
     <span
       className={`inline-flex w-fit items-center rounded-[5px] px-[9px] py-[4px] text-[11.5px] font-medium ${c.bg} ${c.fg}`}
     >
-      {ROLE_LABEL[role]}
+      {dict.common.role[role]}
     </span>
   );
 }
 
 export function OutcomeBadge({ outcome }: { outcome: Outcome }) {
   const c = OUTCOME[outcome];
+  const dict = useDictionary();
   return (
     <span
       className={`inline-flex w-fit items-center rounded-[5px] px-[9px] py-[5px] text-[11.5px] font-medium ${c.bg} ${c.fg}`}
     >
-      {outcome}
+      {dict.common.outcome[outcome]}
     </span>
   );
 }
 
 export function NotifTagBadge({ tag }: { tag: NotifTag }) {
   const c = NOTIF_TAG[tag];
+  const dict = useDictionary();
   return (
     <span
       className={`inline-flex w-fit items-center rounded-[5px] px-[8px] py-[3px] text-[10.5px] font-medium ${c.bg} ${c.fg}`}
     >
-      {c.label}
+      {dict.common.notifTag[tag]}
     </span>
   );
 }

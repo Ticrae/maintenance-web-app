@@ -1,10 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MaintenanceSidebar } from "./maintenance-sidebar";
+import { MobileUserBar } from "@/components/sidebar";
+import { SignOutButton } from "@/components/sign-out-button";
+import { getServerDictionary } from "@/lib/i18n/server";
 
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
 export default async function MaintenanceLayout({ children }: { children: React.ReactNode }) {
+  const dict = await getServerDictionary();
   const supabase = await createClient();
   const {
     data: { user },
@@ -47,19 +51,30 @@ export default async function MaintenanceLayout({ children }: { children: React.
     .eq("assigned_to", user!.id)
     .eq("status", "Completed");
 
-  const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || "You";
+  const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || dict.maintenance.layout.you;
+
+  const initials = name.split(" ").map((n) => n[0]).join("").slice(0, 2) || "?";
+  const subtitle = agency?.name ?? dict.common.role.maintenance;
 
   return (
-    <div className="flex min-h-screen w-full md:h-screen">
+    <div className="flex min-h-screen w-full flex-col md:h-screen md:flex-row">
       <MaintenanceSidebar
         queueCount={queueCount ?? 0}
         myJobsCount={myJobsCount ?? 0}
         completedCount={completedCount ?? 0}
         name={name}
-        subtitle={agency?.name ?? "Maintenance"}
-        initials={name.split(" ").map((n) => n[0]).join("").slice(0, 2) || "?"}
+        subtitle={subtitle}
+        initials={initials}
       />
-      <div className="flex min-w-0 flex-1">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {children}
+        <MobileUserBar
+          initials={initials}
+          name={name}
+          subtitle={subtitle}
+          actions={<SignOutButton inverted />}
+        />
+      </div>
     </div>
   );
 }
