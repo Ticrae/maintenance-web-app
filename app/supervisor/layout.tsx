@@ -1,13 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { MaintenanceSidebar } from "./maintenance-sidebar";
+import { SupervisorSidebar } from "./supervisor-sidebar";
 import { MobileUserBar } from "@/components/sidebar";
 import { SignOutButton } from "@/components/sign-out-button";
 import { getServerDictionary } from "@/lib/i18n/server";
 
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
-export default async function MaintenanceLayout({ children }: { children: React.ReactNode }) {
+export default async function SupervisorLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const dict = await getServerDictionary();
   const supabase = await createClient();
   const {
@@ -31,7 +35,7 @@ export default async function MaintenanceLayout({ children }: { children: React.
     ? await admin.from("agencies").select("name").eq("id", agencyId).maybeSingle<{ name: string }>()
     : { data: null };
 
-  const { count: queueCount } = agencyId
+  const { count: openCount } = agencyId
     ? await admin
         .from("requests")
         .select("id", { count: "exact", head: true })
@@ -39,29 +43,14 @@ export default async function MaintenanceLayout({ children }: { children: React.
         .in("status", ACTIVE_STATUSES)
     : { count: 0 };
 
-  const { count: myJobsCount } = await admin
-    .from("requests")
-    .select("id", { count: "exact", head: true })
-    .eq("assigned_to", user!.id)
-    .in("status", ["Assigned", "In Progress", "Waiting for Parts"]);
-
-  const { count: completedCount } = await admin
-    .from("requests")
-    .select("id", { count: "exact", head: true })
-    .eq("assigned_to", user!.id)
-    .eq("status", "Completed");
-
-  const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || dict.maintenance.layout.you;
-
+  const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || dict.supervisor.layout.you;
   const initials = name.split(" ").map((n) => n[0]).join("").slice(0, 2) || "?";
-  const subtitle = agency?.name ?? dict.common.role.maintenance;
+  const subtitle = agency?.name ?? dict.common.role.agency_admin;
 
   return (
-    <div className="maintenance-shell flex min-h-screen w-full flex-col md:h-screen md:flex-row">
-      <MaintenanceSidebar
-        queueCount={queueCount ?? 0}
-        myJobsCount={myJobsCount ?? 0}
-        completedCount={completedCount ?? 0}
+    <div className="supervisor-shell flex min-h-screen w-full flex-col md:h-screen md:flex-row">
+      <SupervisorSidebar
+        openCount={openCount ?? 0}
         name={name}
         subtitle={subtitle}
         initials={initials}

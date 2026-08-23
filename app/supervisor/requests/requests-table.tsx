@@ -1,9 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { buttonClasses } from "@/components/ui/button";
 import { StatTile } from "@/components/ui/misc";
 import { PriorityBadge } from "@/components/ui/badges";
 import { TextField, Select } from "@/components/ui/inputs";
@@ -94,25 +92,20 @@ export function SupervisorRequestsTable({
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-auto">
+    <>
       <PageHeader
         title={t.title}
         subtitle={t.subtitle}
         actions={
-          <>
-            <TextField
-              placeholder={t.searchPlaceholder}
-              className="w-full sm:w-[260px]"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <Link href="/supervisor" className={buttonClasses("outline")}>
-              {t.overview}
-            </Link>
-          </>
+          <TextField
+            placeholder={t.searchPlaceholder}
+            className="w-full sm:w-[260px]"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         }
       />
-      <div className="flex flex-1 flex-col gap-4 bg-canvas p-4 sm:p-7">
+      <div className="flex flex-1 flex-col gap-4 overflow-auto bg-canvas p-4 sm:p-7">
         <div className="flex flex-wrap gap-3">
           <StatTile label={dict.common.stat.totalRequests} value={requests.length} />
           <StatTile label={dict.common.stat.open} value={openCount} />
@@ -204,6 +197,6 @@ export function SupervisorRequestsTable({
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

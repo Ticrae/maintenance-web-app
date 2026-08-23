@@ -1,5 +1,12 @@
 export const supervisor = {
   en: {
+    nav: {
+      overview: "Overview",
+      requests: "Requests",
+    },
+    layout: {
+      you: "You",
+    },
     overview: {
       title: "Supervisor overview",
       subtitle: "Monitor active work and priorities across your homes",
@@ -25,6 +32,13 @@ export const supervisor = {
     },
   },
   fr: {
+    nav: {
+      overview: "Aperçu",
+      requests: "Demandes",
+    },
+    layout: {
+      you: "Vous",
+    },
     overview: {
       title: "Aperçu superviseur",
       subtitle: "Suivez les travaux en cours et les priorités dans vos établissements",

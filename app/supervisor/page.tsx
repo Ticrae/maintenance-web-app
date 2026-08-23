@@ -1,11 +1,8 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/page-header";
-import { buttonClasses } from "@/components/ui/button";
 import { PriorityBadge } from "@/components/ui/badges";
 import { Eyebrow, StatTile } from "@/components/ui/misc";
-import { SignOutButton } from "@/components/sign-out-button";
 import { getServerDictionary } from "@/lib/i18n/server";
 
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
@@ -55,20 +52,9 @@ export default async function SupervisorPage() {
   for (const r of rows) homeCounts[r.home_id] = (homeCounts[r.home_id] ?? 0) + 1;
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas">
-      <PageHeader
-        title={t.title}
-        subtitle={t.subtitle}
-        actions={
-          <>
-            <Link href="/supervisor/requests" className={buttonClasses("outline")}>
-              {t.viewAllRequests}
-            </Link>
-            <SignOutButton />
-          </>
-        }
-      />
-      <main className="flex flex-1 flex-col gap-5 p-4 sm:p-7">
+    <>
+      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <main className="flex flex-1 flex-col gap-5 overflow-auto bg-canvas p-4 sm:p-7">
         <div className="flex flex-wrap gap-3">
           <StatTile
             label={t.openRequests}
@@ -123,6 +109,6 @@ export default async function SupervisorPage() {
           </div>
         </section>
       </main>
-    </div>
+    </>
   );
 }

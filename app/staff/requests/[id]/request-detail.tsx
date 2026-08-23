@@ -24,7 +24,12 @@ export type RequestDetailData = {
   assigneeName: string | null;
 };
 
-export type CommentItem = { id: string; message: string; created_at: string; authorName: string };
+export type CommentItem = {
+  id: string;
+  message: string;
+  created_at: string;
+  authorName: string;
+};
 export type PhotoItem = { id: string; url: string; created_at: string };
 
 const STEP_INDEX: Record<string, number> = {
@@ -55,7 +60,8 @@ export function RequestDetail({
   const details = rest.join("\n");
 
   const statusLabel =
-    dict.common.status[request.status as keyof typeof dict.common.status] ?? request.status;
+    dict.common.status[request.status as keyof typeof dict.common.status] ??
+    request.status;
 
   async function handleComment() {
     if (!comment.trim()) return;
@@ -83,7 +89,9 @@ export function RequestDetail({
             <span className="font-mono text-[12.5px] font-medium text-faint">
               {request.id.slice(0, 8).toUpperCase()}
             </span>
-            <span className="text-lg font-semibold tracking-[-.01em] text-ink">{title}</span>
+            <span className="text-lg font-semibold tracking-[-.01em] text-ink">
+              {title}
+            </span>
             {request.priority === "Urgent" && <UrgentTag />}
           </div>
           <span className="font-mono text-xs text-meta">
@@ -93,7 +101,7 @@ export function RequestDetail({
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex md:flex-1 overflow-hidden flex-col md:flex-row">
         <div className="flex flex-1 flex-col gap-4 overflow-auto bg-canvas p-6">
           {error && (
             <p className="text-sm text-red-700" role="alert">
@@ -104,7 +112,8 @@ export function RequestDetail({
             <div className="flex items-center justify-between">
               <Eyebrow>{t.progress}</Eyebrow>
               <span className="font-mono text-[11.5px] text-eyebrow">
-                {statusLabel} · {t.updated} {relativeTime(request.updated_at, dict.common.time)}
+                {statusLabel} · {t.updated}{" "}
+                {relativeTime(request.updated_at, dict.common.time)}
               </span>
             </div>
             <Stepper activeIndex={STEP_INDEX[request.status] ?? 0} />
@@ -117,8 +126,12 @@ export function RequestDetail({
 
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
             <Eyebrow>{t.reportedIssue}</Eyebrow>
-            <p className="max-w-[62ch] text-sm leading-[1.6] text-body">{details || title}</p>
-            <span className="font-mono text-[11.5px] text-eyebrow">{request.category}</span>
+            <p className="max-w-[62ch] text-sm leading-[1.6] text-body">
+              {details || title}
+            </p>
+            <span className="font-mono text-[11.5px] text-eyebrow">
+              {request.category}
+            </span>
           </div>
 
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
@@ -134,27 +147,42 @@ export function RequestDetail({
                   />
                 </a>
               ))}
-              {photos.length === 0 && <span className="text-sm text-meta">{t.noPhotosYet}</span>}
+              {photos.length === 0 && (
+                <span className="text-sm text-meta">{t.noPhotosYet}</span>
+              )}
             </div>
           </div>
         </div>
 
         <div className="flex w-[390px] flex-none flex-col border-l border-black/[.08]">
           <div className="flex items-center justify-between border-b border-black/[.07] px-[22px] py-4">
-            <span className="text-[13px] font-semibold text-ink">{t.activity}</span>
+            <span className="text-[13px] font-semibold text-ink">
+              {t.activity}
+            </span>
           </div>
           <div className="flex flex-1 flex-col gap-[18px] overflow-auto px-[22px] py-[18px]">
             {activity.map((a) => (
               <div key={a.id} className="flex gap-[11px]">
-                <Avatar initials={a.authorName.split(" ").map((n) => n[0]).join("").slice(0, 2)} size={28} />
+                <Avatar
+                  initials={a.authorName
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .slice(0, 2)}
+                  size={28}
+                />
                 <div className="flex min-w-0 flex-col gap-1">
                   <div className="flex items-baseline gap-[7px]">
-                    <span className="text-[12.5px] font-medium text-ink">{a.authorName}</span>
+                    <span className="text-[12.5px] font-medium text-ink">
+                      {a.authorName}
+                    </span>
                     <span className="font-mono text-[11px] text-eyebrow">
                       {relativeTime(a.created_at, dict.common.time)}
                     </span>
                   </div>
-                  <span className="text-[13px] leading-[1.55] text-muted">{a.message}</span>
+                  <span className="text-[13px] leading-[1.55] text-muted">
+                    {a.message}
+                  </span>
                 </div>
               </div>
             ))}
@@ -169,7 +197,7 @@ export function RequestDetail({
               placeholder={t.commentPlaceholder}
               className="h-16"
             />
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-center">
               <button
                 onClick={handleComment}
                 disabled={busy || !comment.trim()}

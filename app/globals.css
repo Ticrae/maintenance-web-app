@@ -58,19 +58,21 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-body:not(:has(.staff-shell)):not(:has(.admin-shell)) a {
+body:not(:has(.staff-shell)):not(:has(.admin-shell)):not(:has(.maintenance-shell)):not(:has(.supervisor-shell)) a {
   color: var(--color-link);
   text-decoration: none;
 }
 
-body:not(:has(.staff-shell)):not(:has(.admin-shell)) a:hover {
+body:not(:has(.staff-shell)):not(:has(.admin-shell)):not(:has(.maintenance-shell)):not(:has(.supervisor-shell)) a:hover {
   color: var(--color-link-hover);
   text-decoration: underline;
 }
 
 @layer base {
   .staff-shell a,
-  .admin-shell a {
+  .admin-shell a,
+  .maintenance-shell a,
+  .supervisor-shell a {
     color: inherit;
     text-decoration: none;
   }
