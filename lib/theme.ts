@@ -35,6 +35,23 @@ export const OUTCOME: Record<Outcome, { bg: string; fg: string }> = {
   Reopened: { bg: "bg-urgent-bg", fg: "text-urgent" },
 };
 
+export type SafetyLevel = "safe" | "caution" | "maintenance_required";
+
+export const SAFETY_LEVEL: Record<SafetyLevel, { bg: string; fg: string; dot: string }> = {
+  safe: { bg: "bg-success-bg", fg: "text-success", dot: "🟢" },
+  caution: { bg: "bg-high-bg", fg: "text-high", dot: "🟡" },
+  maintenance_required: { bg: "bg-urgent-bg", fg: "text-urgent", dot: "🔴" },
+};
+
+export type GuideStatus = "draft" | "review" | "published" | "archived";
+
+export const GUIDE_STATUS: Record<GuideStatus, { bg: string; fg: string }> = {
+  draft: { bg: "bg-chip", fg: "text-graphite" },
+  review: { bg: "bg-high-bg", fg: "text-high" },
+  published: { bg: "bg-success-bg", fg: "text-success" },
+  archived: { bg: "bg-selected", fg: "text-faint" },
+};
+
 export type NotifTag = "status" | "comment" | "urgent" | "reminder";
 
 export const NOTIF_TAG: Record<

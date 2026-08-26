@@ -169,9 +169,7 @@ export function NewRequestForm({
     } catch (err) {
       console.error("Submit request error:", err);
 
-      setError(
-        err instanceof Error ? err.message : t.submitError,
-      );
+      setError(err instanceof Error ? err.message : t.submitError);
 
       setPending(false);
     }
@@ -195,7 +193,12 @@ export function NewRequestForm({
             {dict.common.cancel}
           </Link>
 
-          <Button type="submit" form="new-request-form" disabled={pending}>
+          <Button
+            className="w-[120px]"
+            type="submit"
+            form="new-request-form"
+            disabled={pending}
+          >
             {pending ? t.submitting : t.submit}
           </Button>
         </div>
@@ -204,7 +207,7 @@ export function NewRequestForm({
       <form
         id="new-request-form"
         onSubmit={handleSubmit}
-        className="flex flex-1 gap-6 overflow-auto bg-canvas p-7"
+        className="flex flex-col flex-1 md:flex-row gap-6 overflow-auto bg-canvas p-7"
       >
         <div className="flex max-w-[720px] flex-1 flex-col gap-[18px]">
           <div className="flex flex-col gap-[18px] rounded-lg border border-black/[.09] bg-surface p-6">
@@ -336,9 +339,7 @@ export function NewRequestForm({
               </button>
             </div>
 
-            <p className="text-[11.5px] text-meta">
-              {t.photoHint}
-            </p>
+            <p className="text-[11.5px] text-meta">{t.photoHint}</p>
           </div>
 
           {error && (

@@ -5,10 +5,14 @@ import {
   ROLE_CHIP,
   OUTCOME,
   NOTIF_TAG,
+  SAFETY_LEVEL,
+  GUIDE_STATUS,
   type Priority,
   type Role,
   type Outcome,
   type NotifTag,
+  type SafetyLevel,
+  type GuideStatus,
 } from "@/lib/theme";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
@@ -70,4 +74,29 @@ export function NotifTagBadge({ tag }: { tag: NotifTag }) {
 
 export function UnreadDot() {
   return <span className="h-[7px] w-[7px] flex-none rounded-full bg-link" aria-hidden />;
+}
+
+export function SafetyBadge({ level, short = false }: { level: SafetyLevel; short?: boolean }) {
+  const c = SAFETY_LEVEL[level];
+  const dict = useDictionary();
+  return (
+    <span
+      className={`inline-flex w-fit items-center gap-1 rounded-[5px] px-[9px] py-[5px] text-[11.5px] font-medium ${c.bg} ${c.fg}`}
+    >
+      <span aria-hidden>{c.dot}</span>
+      {short ? dict.admin.troubleshooting.safetyShort[level] : dict.admin.troubleshooting.safety[level]}
+    </span>
+  );
+}
+
+export function GuideStatusBadge({ status }: { status: GuideStatus }) {
+  const c = GUIDE_STATUS[status];
+  const dict = useDictionary();
+  return (
+    <span
+      className={`inline-flex w-fit items-center rounded-[5px] px-[9px] py-[5px] text-[11.5px] font-medium ${c.bg} ${c.fg}`}
+    >
+      {dict.admin.troubleshooting.status[status]}
+    </span>
+  );
 }

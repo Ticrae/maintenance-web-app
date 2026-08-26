@@ -16,7 +16,13 @@ export type AppSettings = {
 
 const PRIORITIES = ["Urgent", "High", "Medium", "Low"] as const;
 
-export function SettingsForm({ settings }: { settings: AppSettings | null }) {
+export function SettingsForm({
+  settings,
+  bare = false,
+}: {
+  settings: AppSettings | null;
+  bare?: boolean;
+}) {
   const [state, formAction, isPending] = useActionState(updateSettings, undefined);
   const [categories, setCategories] = useState<string[]>(settings?.categories ?? []);
   const [draft, setDraft] = useState("");
@@ -24,16 +30,20 @@ export function SettingsForm({ settings }: { settings: AppSettings | null }) {
   const t = dict.admin.settings;
 
   if (!settings) {
+    const notice = (
+      <div className="p-4 text-sm text-meta sm:p-7">
+        {t.notInitialized}{" "}
+        <code className="rounded bg-chip px-1 py-[2px] font-mono text-xs">
+          supabase/migrations/0001_app_settings.sql
+        </code>{" "}
+        {t.notInitializedSuffix}
+      </div>
+    );
+    if (bare) return notice;
     return (
       <div className="flex flex-1 flex-col overflow-auto">
         <PageHeader title={t.title} subtitle={t.subtitle} />
-        <div className="p-4 text-sm text-meta sm:p-7">
-          {t.notInitialized}{" "}
-          <code className="rounded bg-chip px-1 py-[2px] font-mono text-xs">
-            supabase/migrations/0001_app_settings.sql
-          </code>{" "}
-          {t.notInitializedSuffix}
-        </div>
+        {notice}
       </div>
     );
   }
@@ -48,10 +58,8 @@ export function SettingsForm({ settings }: { settings: AppSettings | null }) {
     setCategories((c) => c.filter((c2) => c2 !== value));
   }
 
-  return (
-    <div className="flex flex-1 flex-col overflow-auto">
-      <PageHeader title={t.title} subtitle={t.subtitle} />
-      <form action={formAction} className="flex flex-1 flex-col gap-6 bg-canvas p-4 sm:p-7">
+  const form = (
+    <form action={formAction} className="flex flex-1 flex-col gap-6 bg-canvas p-4 sm:p-7">
         <input type="hidden" name="categories" value={categories.join(",")} />
 
         <div className="flex flex-col gap-3 rounded-lg border border-black/[.09] bg-surface p-5">
@@ -132,6 +140,14 @@ export function SettingsForm({ settings }: { settings: AppSettings | null }) {
           </Button>
         </div>
       </form>
+  );
+
+  if (bare) return form;
+
+  return (
+    <div className="flex flex-1 flex-col overflow-auto">
+      <PageHeader title={t.title} subtitle={t.subtitle} />
+      {form}
     </div>
   );
 }

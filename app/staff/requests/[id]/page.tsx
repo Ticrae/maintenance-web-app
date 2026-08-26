@@ -2,9 +2,16 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerDictionary } from "@/lib/i18n/server";
-import { RequestDetail, type RequestDetailData, type CommentItem, type PhotoItem } from "./request-detail";
+import {
+  RequestDetail,
+  type RequestDetailData,
+  type CommentItem,
+  type PhotoItem,
+} from "./request-detail";
 
-export default async function StaffRequestDetailPage(props: PageProps<"/staff/requests/[id]">) {
+export default async function StaffRequestDetailPage(props: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await props.params;
   const dict = await getServerDictionary();
 
@@ -24,7 +31,7 @@ export default async function StaffRequestDetailPage(props: PageProps<"/staff/re
   const { data: request } = await admin
     .from("requests")
     .select(
-      "id, category, priority, status, description, created_at, updated_at, home_id, reported_by, assigned_to, homes(name)"
+      "id, category, priority, status, description, created_at, updated_at, home_id, reported_by, assigned_to, homes(name)",
     )
     .eq("id", id)
     .maybeSingle<{
@@ -41,7 +48,8 @@ export default async function StaffRequestDetailPage(props: PageProps<"/staff/re
       homes: { name: string } | null;
     }>();
 
-  if (!request || !profile?.home_id || request.home_id !== profile.home_id) notFound();
+  if (!request || !profile?.home_id || request.home_id !== profile.home_id)
+    notFound();
 
   const { data: reporter } = await admin
     .from("profiles")
@@ -67,7 +75,10 @@ export default async function StaffRequestDetailPage(props: PageProps<"/staff/re
         id: string;
         message: string;
         created_at: string;
-        profiles: { first_name: string | null; last_name: string | null } | null;
+        profiles: {
+          first_name: string | null;
+          last_name: string | null;
+        } | null;
       }[]
     >();
 
@@ -87,9 +98,12 @@ export default async function StaffRequestDetailPage(props: PageProps<"/staff/re
     created_at: request.created_at,
     updated_at: request.updated_at,
     homeName: request.homes?.name ?? "—",
-    reporterName: [reporter?.first_name, reporter?.last_name].filter(Boolean).join(" ") || dict.staff.requestDetail.unknown,
+    reporterName:
+      [reporter?.first_name, reporter?.last_name].filter(Boolean).join(" ") ||
+      dict.staff.requestDetail.unknown,
     assigneeName: assignee
-      ? [assignee.first_name, assignee.last_name].filter(Boolean).join(" ") || dict.common.unnamed
+      ? [assignee.first_name, assignee.last_name].filter(Boolean).join(" ") ||
+        dict.common.unnamed
       : null,
   };
 
@@ -97,8 +111,13 @@ export default async function StaffRequestDetailPage(props: PageProps<"/staff/re
     id: c.id,
     message: c.message,
     created_at: c.created_at,
-    authorName: [c.profiles?.first_name, c.profiles?.last_name].filter(Boolean).join(" ") || dict.staff.requestDetail.unknown,
+    authorName:
+      [c.profiles?.first_name, c.profiles?.last_name]
+        .filter(Boolean)
+        .join(" ") || dict.staff.requestDetail.unknown,
   }));
 
-  return <RequestDetail request={detail} activity={activity} photos={photos ?? []} />;
+  return (
+    <RequestDetail request={detail} activity={activity} photos={photos ?? []} />
+  );
 }

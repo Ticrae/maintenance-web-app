@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { SettingsForm, type AppSettings } from "./settings-form";
+import { getAssetTypes, getGuides } from "@/app/actions/troubleshooting";
+import { getAgencies } from "@/app/actions/homes";
+import { SettingsShell } from "./settings-shell";
+import type { AppSettings } from "./settings-form";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
   const supabase = await createClient();
@@ -9,5 +14,18 @@ export default async function AdminSettingsPage() {
     .eq("id", true)
     .maybeSingle<AppSettings>();
 
-  return <SettingsForm settings={settings} />;
+  const [assetTypes, agencies, guides] = await Promise.all([
+    getAssetTypes(),
+    getAgencies(),
+    getGuides(),
+  ]);
+
+  return (
+    <SettingsShell
+      settings={settings}
+      assetTypes={assetTypes}
+      agencies={agencies.map((a) => ({ id: a.id, name: a.name }))}
+      guides={guides}
+    />
+  );
 }
