@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Button, buttonClasses } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { TextField, TextArea, Select } from "@/components/ui/inputs";
 import { GuideStatusBadge } from "@/components/ui/badges";
 import {
@@ -565,21 +565,15 @@ function NewGuideDrawer({
               {error}
             </p>
           )}
-          <div className="mt-auto flex gap-[10px]">
-            <button
-              type="button"
-              onClick={onClose}
-              className={buttonClasses("outline", "flex-1")}
-            >
-              {dict.common.cancel}
-            </button>
-            <button
-              type="submit"
-              disabled={pending}
-              className={buttonClasses("primary", "flex-1")}
-            >
-              {pending ? dict.common.saving : t.createGuide}
-            </button>
+          <div className="mt-auto flex items-center gap-2">
+            <div className=" flex  gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                {dict.common.cancel}
+              </Button>
+              <Button type="submit" disabled={pending}>
+                {pending ? dict.common.saving : t.createGuide}
+              </Button>
+            </div>
           </div>
         </form>
       </div>

@@ -1,9 +1,23 @@
 "use server";
 
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { requireSuperAdmin } from "@/lib/supabase/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isRole } from "@/lib/auth";
+
+// Lets the invite email link back to whichever origin actually sent the
+// invite (localhost while developing, the deployed domain in production)
+// instead of a fixed Site URL baked into the Supabase project settings.
+async function currentOrigin() {
+  const headersList = await headers();
+  const host = headersList.get("x-forwarded-host") ?? headersList.get("host");
+  // Deterministic rather than trusting x-forwarded-proto, which can be set
+  // by something in front of the request (e.g. local port forwarding) even
+  // when the app itself is plain http on localhost.
+  const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+  return `${protocol}://${host}`;
+}
 
 export type UserFormState = { error?: string } | undefined;
 
@@ -34,15 +48,19 @@ export async function inviteUser(_: UserFormState, formData: FormData): Promise<
   if (!parsed.ok) return { error: parsed.error };
 
   const admin = createAdminClient();
-  const { data, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email);
+  const { data, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+    redirectTo: await currentOrigin(),
+  });
   if (inviteError || !data.user) {
     return { error: inviteError?.message ?? "Could not invite this user." };
   }
 
-  const { error: profileError } = await admin.from("profiles").insert({
-    id: data.user.id,
-    ...parsed.fields,
-  });
+  // A database trigger on auth.users already inserts a bare profiles row when
+  // the invite creates the auth user, so upsert onto that row instead of
+  // inserting a second one (which collides on profiles_pkey).
+  const { error: profileError } = await admin
+    .from("profiles")
+    .upsert({ id: data.user.id, ...parsed.fields }, { onConflict: "id" });
   if (profileError) {
     await admin.auth.admin.deleteUser(data.user.id);
     return { error: profileError.message };

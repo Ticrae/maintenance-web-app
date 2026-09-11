@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_SLA_HOURS } from "@/lib/sla";
+import { redirect } from "next/navigation";
 import { MyJobsView, type MyJobRow } from "./my-jobs-view";
 
 export default async function MyJobsPage() {
@@ -9,12 +10,16 @@ export default async function MyJobsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const admin = createAdminClient();
 
   const { data: requests } = await admin
     .from("requests")
     .select("id, category, priority, status, description, created_at, homes(name)")
-    .eq("assigned_to", user!.id)
+    .eq("assigned_to", user.id)
     .in("status", ["Assigned", "In Progress", "Waiting for Parts"])
     .order("created_at", { ascending: true })
     .returns<

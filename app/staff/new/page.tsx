@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { getHomes } from "@/app/actions/homes";
-import { NewRequestForm } from "./new-request-form";
+import { getStaffGuides } from "@/app/actions/troubleshooting";
+import { redirect } from "next/navigation";
+import { NewRequestFlow } from "./new-request-flow";
 
 const FALLBACK_CATEGORIES = [
   "Plumbing",
@@ -17,10 +19,14 @@ export default async function NewRequestPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("agency_id, home_id")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .maybeSingle<{ agency_id: string | null; home_id: string | null }>();
 
   const { data: settings } = await supabase
@@ -35,11 +41,14 @@ export default async function NewRequestPage() {
     .map((h) => ({ id: h.id, name: h.name }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const guides = await getStaffGuides();
+
   return (
-    <NewRequestForm
+    <NewRequestFlow
       categories={settings?.categories ?? FALLBACK_CATEGORIES}
       homes={homes}
       defaultHomeId={profile?.home_id ?? ""}
+      guides={guides}
     />
   );
 }

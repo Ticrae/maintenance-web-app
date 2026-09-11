@@ -6,6 +6,7 @@ import { StaffSidebar } from "./staff-sidebar";
 import { MobileUserBar } from "@/components/sidebar";
 import { SignOutButton } from "@/components/sign-out-button";
 import { getServerDictionary } from "@/lib/i18n/server";
+import { redirect } from "next/navigation";
 
 export default async function StaffLayout({
   children,
@@ -19,10 +20,14 @@ export default async function StaffLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("first_name, home_id")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .maybeSingle<{ first_name: string | null; home_id: string | null }>();
 
   const homeId = profile?.home_id ?? null;

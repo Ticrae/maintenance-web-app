@@ -4,6 +4,7 @@ import { SupervisorSidebar } from "./supervisor-sidebar";
 import { MobileUserBar } from "@/components/sidebar";
 import { SignOutButton } from "@/components/sign-out-button";
 import { getServerDictionary } from "@/lib/i18n/server";
+import { redirect } from "next/navigation";
 
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
@@ -18,10 +19,14 @@ export default async function SupervisorLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("first_name, last_name, agency_id")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .maybeSingle<{
       first_name: string | null;
       last_name: string | null;

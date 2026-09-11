@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { redirect } from "next/navigation";
 import { SupervisorRequestsTable, type RequestRow, type Assignee } from "./requests-table";
 
 export const dynamic = "force-dynamic";
@@ -10,10 +11,14 @@ export default async function SupervisorRequestsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("agency_id")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .maybeSingle<{ agency_id: string | null }>();
 
   const agencyId = profile?.agency_id ?? null;

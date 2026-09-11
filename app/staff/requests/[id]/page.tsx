@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerDictionary } from "@/lib/i18n/server";
+import { redirect } from "next/navigation";
 import {
   RequestDetail,
   type RequestDetailData,
@@ -20,10 +21,14 @@ export default async function StaffRequestDetailPage(props: {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("home_id")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .maybeSingle<{ home_id: string | null }>();
 
   const admin = createAdminClient();

@@ -7,7 +7,10 @@ import { useEffect, useRef, useState } from "react";
 import { Eyebrow, AddPhotoTile } from "@/components/ui/misc";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { TextField, TextArea, Select, Toggle } from "@/components/ui/inputs";
-import { submitStaffRequest } from "@/app/actions/requests";
+import {
+  submitStaffRequest,
+  type TroubleshootingSummary,
+} from "@/app/actions/requests";
 import { uploadRequestPhoto } from "@/app/actions/photos";
 import type { Priority } from "@/lib/theme";
 import { useDictionary } from "@/lib/i18n/language-provider";
@@ -17,23 +20,31 @@ type PhotoPreview = {
   url: string;
 };
 
-export function NewRequestForm({
+export function RequestForm({
   categories,
   homes,
   defaultHomeId,
+  prefill,
+  troubleshooting = null,
+  onBack,
 }: {
   categories: string[];
   homes: { id: string; name: string }[];
   defaultHomeId: string;
+  prefill?: { title?: string; category?: string };
+  troubleshooting?: TroubleshootingSummary | null;
+  onBack?: () => void;
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dict = useDictionary();
   const t = dict.staff.newRequest;
 
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(prefill?.title ?? "");
   const [homeId, setHomeId] = useState(defaultHomeId || homes[0]?.id || "");
-  const [category, setCategory] = useState(categories[0] ?? "");
+  const [category, setCategory] = useState(
+    prefill?.category ?? categories[0] ?? "",
+  );
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("Medium");
@@ -135,6 +146,7 @@ export function NewRequestForm({
         description: description.trim(),
         priority,
         urgent,
+        troubleshooting,
       });
 
       /*
@@ -189,6 +201,17 @@ export function NewRequestForm({
         <span className="text-[13px] font-medium text-ink">{t.title}</span>
 
         <div className="ml-auto flex gap-[10px]">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              disabled={pending}
+              className={buttonClasses("ghost")}
+            >
+              {t.flow.back}
+            </button>
+          )}
+
           <Link href="/staff" className={buttonClasses("outline")}>
             {dict.common.cancel}
           </Link>
@@ -210,6 +233,12 @@ export function NewRequestForm({
         className="flex flex-col flex-1 md:flex-row gap-6 overflow-auto bg-canvas p-7"
       >
         <div className="flex max-w-[720px] flex-1 flex-col gap-[18px]">
+          {troubleshooting && (
+            <div className="rounded-md border border-black/[.09] bg-selected px-4 py-3 text-[12.5px] leading-[1.5] text-body">
+              {t.flow.summaryBanner(troubleshooting.problem)}
+            </div>
+          )}
+
           <div className="flex flex-col gap-[18px] rounded-lg border border-black/[.09] bg-surface p-6">
             <Eyebrow>{t.whatNeedsFixing}</Eyebrow>
 

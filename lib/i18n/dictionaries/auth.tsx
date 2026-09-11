@@ -23,6 +23,7 @@ export const auth = {
       sessionExpired: "Your session expired. Please log in again.",
       noAccess: "That Google account isn't linked to an account here. Contact your home manager or admin.",
       oauthError: "Something went wrong signing you in with Google. Please try again.",
+      inviteError: "This invite link is invalid or has expired. Ask your admin to send you a new one.",
       noAccount: "No account? Contact your home manager or admin.",
     },
     forgotPassword: {
@@ -51,6 +52,16 @@ export const auth = {
       mismatch: "Passwords do not match.",
       tooShort: "Password must be at least 8 characters.",
     },
+    acceptInvite: {
+      title: "Welcome aboard",
+      subtitle: "Set a password to activate your account.",
+      newPassword: "Password",
+      confirmPassword: "Confirm password",
+      submit: "Activate account",
+      submitting: "Activating...",
+      mismatch: "Passwords do not match.",
+      tooShort: "Password must be at least 8 characters.",
+    },
   },
   fr: {
     login: {
@@ -76,6 +87,7 @@ export const auth = {
       sessionExpired: "Votre session a expiré. Veuillez vous reconnecter.",
       noAccess: "Ce compte Google n'est lié à aucun compte ici. Contactez votre responsable ou l'administrateur.",
       oauthError: "Une erreur s'est produite lors de la connexion avec Google. Veuillez réessayer.",
+      inviteError: "Ce lien d'invitation est invalide ou a expiré. Demandez à votre administrateur de vous en envoyer un nouveau.",
       noAccount: "Pas de compte ? Contactez votre responsable ou l'administrateur.",
     },
     forgotPassword: {
@@ -102,6 +114,16 @@ export const auth = {
       confirmPassword: "Confirmer le nouveau mot de passe",
       submit: "Mettre à jour le mot de passe",
       submitting: "Mise à jour...",
+      mismatch: "Les mots de passe ne correspondent pas.",
+      tooShort: "Le mot de passe doit contenir au moins 8 caractères.",
+    },
+    acceptInvite: {
+      title: "Bienvenue",
+      subtitle: "Définissez un mot de passe pour activer votre compte.",
+      newPassword: "Mot de passe",
+      confirmPassword: "Confirmer le mot de passe",
+      submit: "Activer le compte",
+      submitting: "Activation...",
       mismatch: "Les mots de passe ne correspondent pas.",
       tooShort: "Le mot de passe doit contenir au moins 8 caractères.",
     },

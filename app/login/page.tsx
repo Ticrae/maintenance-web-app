@@ -45,7 +45,9 @@ function SessionMessage({ t }: { t: ReturnType<typeof useDictionary>["auth"]["lo
     ? t.sessionExpired
     : error === "no_access"
       ? t.noAccess
-      : t.oauthError;
+      : error === "invite"
+        ? t.inviteError
+        : t.oauthError;
 
   return (
     <p className="text-sm text-red-700" role="alert">

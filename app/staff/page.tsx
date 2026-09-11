@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getHomes } from "@/app/actions/homes";
 import { getServerDictionary } from "@/lib/i18n/server";
+import { redirect } from "next/navigation";
 import { MyRequestsTable, type StaffRequestRow } from "./requests-table";
 
 export default async function MyRequestsPage({
@@ -16,10 +17,14 @@ export default async function MyRequestsPage({
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("home_id")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .maybeSingle<{ home_id: string | null }>();
 
   const homeId = profile?.home_id ?? null;

@@ -128,6 +128,16 @@ export async function assignRequest(
 
 // --- Staff: submit a new request -------------------------------------------
 
+// When a staff member tries the guided troubleshooting first but still ends up
+// submitting a request, we don't have a table to record the attempt, so a short
+// summary is folded into the request description (same as title/location).
+export type TroubleshootingSummary = {
+  problem: string;
+  guideTitle: string;
+  stepsCompleted: number;
+  outcome: "unresolved" | "stopped";
+};
+
 export async function submitStaffRequest(input: {
   title: string;
   homeId: string;
@@ -136,6 +146,7 @@ export async function submitStaffRequest(input: {
   description: string;
   priority: Priority;
   urgent: boolean;
+  troubleshooting?: TroubleshootingSummary | null;
 }) {
   const profile = await requireRole(["staff"]);
 
@@ -156,9 +167,24 @@ export async function submitStaffRequest(input: {
     throw new Error("Choose a valid home.");
   }
 
-  const description = input.location.trim()
+  const locationLine = input.location.trim()
     ? `${input.location.trim()}: ${input.description}`
     : input.description;
+
+  const lines = [input.title];
+
+  if (input.troubleshooting) {
+    const ts = input.troubleshooting;
+    const outcomeText =
+      ts.outcome === "stopped"
+        ? "stopped early — needs a maintenance worker"
+        : "did not resolve the issue";
+    lines.push(
+      `Troubleshooting "${ts.problem}": completed ${ts.stepsCompleted} step(s); ${outcomeText}.`
+    );
+  }
+
+  lines.push(locationLine);
 
   const assigneeId = await pickMaintenanceAssignee(admin, profile.agency_id);
 
@@ -171,7 +197,7 @@ export async function submitStaffRequest(input: {
       priority: input.urgent ? "Urgent" : input.priority,
       status: assigneeId ? "Assigned" : "Open",
       assigned_to: assigneeId,
-      description: `${input.title}\n${description}`,
+      description: lines.join("\n"),
       reported_by: profile.id,
     })
     .select("id")

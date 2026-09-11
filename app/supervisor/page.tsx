@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { PriorityBadge } from "@/components/ui/badges";
 import { Eyebrow, StatTile } from "@/components/ui/misc";
 import { getServerDictionary } from "@/lib/i18n/server";
+import { redirect } from "next/navigation";
 
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
@@ -15,10 +16,14 @@ export default async function SupervisorPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("agency_id")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .maybeSingle<{ agency_id: string | null }>();
 
   const agencyId = profile?.agency_id ?? null;

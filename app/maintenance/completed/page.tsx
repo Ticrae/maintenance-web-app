@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { redirect } from "next/navigation";
 import { CompletedView, type CompletedRow } from "./completed-view";
 
 export default async function CompletedPage() {
@@ -8,10 +9,14 @@ export default async function CompletedPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("agency_id")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .maybeSingle<{ agency_id: string | null }>();
 
   const admin = createAdminClient();
@@ -19,7 +24,7 @@ export default async function CompletedPage() {
   const { data: requests } = await admin
     .from("requests")
     .select("id, category, description, created_at, updated_at, homes(id, name)")
-    .eq("assigned_to", user!.id)
+    .eq("assigned_to", user.id)
     .eq("status", "Completed")
     .order("updated_at", { ascending: false })
     .returns<

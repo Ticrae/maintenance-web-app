@@ -4,6 +4,7 @@ import { MaintenanceSidebar } from "./maintenance-sidebar";
 import { MobileUserBar } from "@/components/sidebar";
 import { SignOutButton } from "@/components/sign-out-button";
 import { getServerDictionary } from "@/lib/i18n/server";
+import { redirect } from "next/navigation";
 
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
@@ -14,10 +15,14 @@ export default async function MaintenanceLayout({ children }: { children: React.
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("first_name, last_name, agency_id")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .maybeSingle<{
       first_name: string | null;
       last_name: string | null;
@@ -42,13 +47,13 @@ export default async function MaintenanceLayout({ children }: { children: React.
   const { count: myJobsCount } = await admin
     .from("requests")
     .select("id", { count: "exact", head: true })
-    .eq("assigned_to", user!.id)
+    .eq("assigned_to", user.id)
     .in("status", ["Assigned", "In Progress", "Waiting for Parts"]);
 
   const { count: completedCount } = await admin
     .from("requests")
     .select("id", { count: "exact", head: true })
-    .eq("assigned_to", user!.id)
+    .eq("assigned_to", user.id)
     .eq("status", "Completed");
 
   const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || dict.maintenance.layout.you;

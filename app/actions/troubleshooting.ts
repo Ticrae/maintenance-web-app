@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSuperAdmin } from "@/lib/supabase/require-admin";
+import { requireRole, requireSuperAdmin } from "@/lib/supabase/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SafetyLevel, GuideStatus } from "@/lib/theme";
 
@@ -445,4 +445,150 @@ export async function deleteOption(id: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath(SETTINGS_PATH);
+}
+
+// --- Staff: run a published guide ----------------------------------------
+//
+// Everything above is admin-only guide authoring. The two functions below are
+// what home staff hit from the "Report a problem" flow: they only ever expose
+// published guides that belong to the staff member's own agency.
+
+export type StaffGuideListItem = {
+  id: string;
+  title: string;
+  problem: string;
+  assetType: string | null;
+  stepCount: number;
+};
+
+export type RunnerOption = {
+  id: string;
+  label: string;
+  next_step_id: string | null;
+  action: StepAction | null;
+};
+
+export type RunnerStep = {
+  id: string;
+  step_number: number;
+  title: string;
+  instruction: string;
+  question: string | null;
+  step_type: StepType;
+  safety_level: SafetyLevel;
+  options: RunnerOption[];
+};
+
+export type StaffGuideRunner = {
+  id: string;
+  title: string;
+  problem: string;
+  description: string | null;
+  steps: RunnerStep[];
+};
+
+export async function getStaffGuides(): Promise<StaffGuideListItem[]> {
+  const profile = await requireRole(["staff"]);
+  if (!profile.agency_id) return [];
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("troubleshooting_guides")
+    .select("id, title, problem, asset_types(name)")
+    .eq("status", "published")
+    .eq("agency_id", profile.agency_id)
+    .order("problem")
+    .returns<
+      { id: string; title: string; problem: string; asset_types: { name: string } | null }[]
+    >();
+
+  if (error) {
+    console.error("Failed to fetch staff guides:", error);
+    return [];
+  }
+
+  const guides = data ?? [];
+  if (guides.length === 0) return [];
+
+  const { data: steps } = await admin
+    .from("troubleshooting_steps")
+    .select("guide_id")
+    .in(
+      "guide_id",
+      guides.map((g) => g.id)
+    );
+
+  const counts: Record<string, number> = {};
+  for (const s of steps ?? []) counts[s.guide_id] = (counts[s.guide_id] ?? 0) + 1;
+
+  // A guide with no steps can't be walked, so don't offer it.
+  return guides
+    .filter((g) => (counts[g.id] ?? 0) > 0)
+    .map((g) => ({
+      id: g.id,
+      title: g.title,
+      problem: g.problem,
+      assetType: g.asset_types?.name ?? null,
+      stepCount: counts[g.id] ?? 0,
+    }));
+}
+
+export async function getStaffGuideRunner(guideId: string): Promise<StaffGuideRunner | null> {
+  const profile = await requireRole(["staff"]);
+  if (!profile.agency_id) return null;
+
+  const admin = createAdminClient();
+
+  const { data: guide } = await admin
+    .from("troubleshooting_guides")
+    .select("id, title, problem, description, agency_id, status")
+    .eq("id", guideId)
+    .maybeSingle<{
+      id: string;
+      title: string;
+      problem: string;
+      description: string | null;
+      agency_id: string;
+      status: GuideStatus;
+    }>();
+
+  if (!guide || guide.status !== "published" || guide.agency_id !== profile.agency_id) {
+    return null;
+  }
+
+  const { data: steps } = await admin
+    .from("troubleshooting_steps")
+    .select("id, step_number, title, instruction, question, step_type, safety_level")
+    .eq("guide_id", guideId)
+    .order("step_number")
+    .returns<Omit<RunnerStep, "options">[]>();
+
+  const stepRows = steps ?? [];
+  const stepIds = stepRows.map((s) => s.id);
+
+  const { data: options } = stepIds.length
+    ? await admin
+        .from("troubleshooting_options")
+        .select("id, step_id, label, next_step_id, action")
+        .in("step_id", stepIds)
+        .returns<(RunnerOption & { step_id: string })[]>()
+    : { data: [] };
+
+  const optionsByStep: Record<string, RunnerOption[]> = {};
+  for (const o of options ?? []) {
+    (optionsByStep[o.step_id] ??= []).push({
+      id: o.id,
+      label: o.label,
+      next_step_id: o.next_step_id,
+      action: o.action,
+    });
+  }
+
+  return {
+    id: guide.id,
+    title: guide.title,
+    problem: guide.problem,
+    description: guide.description,
+    steps: stepRows.map((s) => ({ ...s, options: optionsByStep[s.id] ?? [] })),
+  };
 }

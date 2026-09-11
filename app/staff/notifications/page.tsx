@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getHomes } from "@/app/actions/homes";
 import { getServerDictionary, getServerLocale } from "@/lib/i18n/server";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { redirect } from "next/navigation";
 import { NotificationsList, type NotifItem } from "./notifications-list";
 
 function dayLabel(date: Date, dict: Dictionary, locale: string) {
@@ -29,10 +30,14 @@ export default async function NotificationsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("home_id")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .maybeSingle<{ home_id: string | null }>();
 
   const homeId = profile?.home_id ?? null;
