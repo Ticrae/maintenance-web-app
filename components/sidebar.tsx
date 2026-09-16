@@ -158,7 +158,7 @@ export function MobileUserBar({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="sticky bottom-0 z-10 flex-none bg-[linear-gradient(to_top,var(--color-canvas)_60%,transparent)] px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-6 md:hidden">
+    <div className="sticky bottom-0 z-10 flex-none bg-[linear-gradient(to_top,var(--color-canvas)_60%,transparent)] px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-6 md:hidden mb-24">
       <div className="flex items-center gap-[10px] rounded-2xl bg-graphite px-3 py-[10px] shadow-lg">
         <div className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full bg-white/[.13] text-[12px] font-semibold text-white">
           {initials}

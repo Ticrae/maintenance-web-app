@@ -52,7 +52,9 @@ export function RequestForm({
   const [urgent, setUrgent] = useState(false);
 
   const [assetId, setAssetId] = useState("");
-  const [homeAssets, setHomeAssets] = useState<{ id: string; name: string }[]>([]);
+  const [homeAssets, setHomeAssets] = useState<{ id: string; name: string }[]>(
+    [],
+  );
 
   // Home changes are user-driven (the Home <Select>'s onChange below), so the
   // previous home's item list/selection is cleared there rather than in this
@@ -61,7 +63,8 @@ export function RequestForm({
     if (!homeId) return;
     let cancelled = false;
     getAssetsForHome(homeId).then((assets) => {
-      if (!cancelled) setHomeAssets(assets.map((a) => ({ id: a.id, name: a.name })));
+      if (!cancelled)
+        setHomeAssets(assets.map((a) => ({ id: a.id, name: a.name })));
     });
     return () => {
       cancelled = true;
@@ -220,7 +223,7 @@ export function RequestForm({
         <span className="text-[13px] font-medium text-ink">{t.title}</span>
 
         <div className="ml-auto flex gap-[10px]">
-          {onBack && (
+          {/* {onBack && (
             <button
               type="button"
               onClick={onBack}
@@ -229,7 +232,7 @@ export function RequestForm({
             >
               {t.flow.back}
             </button>
-          )}
+          )} */}
 
           <Link href="/staff" className={buttonClasses("outline")}>
             {dict.common.cancel}
@@ -336,7 +339,10 @@ export function RequestForm({
                   {t.whichItemLabel}
                 </label>
 
-                <Select value={assetId} onChange={(e) => setAssetId(e.target.value)}>
+                <Select
+                  value={assetId}
+                  onChange={(e) => setAssetId(e.target.value)}
+                >
                   <option value="">{t.notSureOption}</option>
                   {homeAssets.map((a) => (
                     <option key={a.id} value={a.id}>
