@@ -211,7 +211,7 @@ export function RequestForm({
 
   return (
     <>
-      <div className="flex h-[62px] flex-none items-center gap-[14px] border-b border-black/[.08] px-7">
+      <div className="flex h-[62px] flex-none items-center gap-[8px] border-b border-black/[.08] px-7">
         <div className="h-[26px] w-[26px] rounded-md bg-graphite" />
 
         <Link href="/staff" className="text-[13px] text-meta">
@@ -239,7 +239,7 @@ export function RequestForm({
           </Link>
 
           <Button
-            className="w-[120px]"
+            className="w-[80px]"
             type="submit"
             form="new-request-form"
             disabled={pending}
