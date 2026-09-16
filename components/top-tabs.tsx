@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { SignOutButton } from "@/components/sign-out-button";
+import { LanguageToggle } from "@/components/language-toggle";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
 export const TABS = [
+  { href: "/admin/intelligence", key: "intelligence" },
   { href: "/admin/reports", key: "reports" },
   { href: "/admin/requests", key: "requests" },
   { href: "/admin/homes", key: "homesAndStaff" },
+  { href: "/admin/assets", key: "assets" },
+  { href: "/admin/contractors", key: "contractors" },
+  { href: "/admin/compliance", key: "compliance" },
   { href: "/admin/users", key: "users" },
   { href: "/admin/settings", key: "settings" },
 ] as const;
@@ -16,7 +21,7 @@ export function TopTabs({ active }: { active: string }) {
   const dict = useDictionary();
 
   return (
-    <div className="hidden min-h-[62px] flex-none items-center gap-3 overflow-x-auto border-b border-black/[.08] px-4 py-3 sm:px-7 md:flex">
+    <div className="hidden min-h-[62px] flex-none items-center gap-3 overflow-x-auto border-b border-black/[.08] px-4 py-3 sm:px-7 md:flex print:hidden">
       <div className="flex items-center gap-[10px]">
         <div className="h-[26px] w-[26px] rounded-md bg-graphite" />
         <span className="text-sm font-semibold tracking-[-.01em] text-ink">
@@ -41,7 +46,8 @@ export function TopTabs({ active }: { active: string }) {
           </Link>
         ))}
       </div>
-      <div className="ml-auto flex-none">
+      <div className="ml-auto flex flex-none items-center gap-3">
+        <LanguageToggle />
         <SignOutButton />
       </div>
     </div>

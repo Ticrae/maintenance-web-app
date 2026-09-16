@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui/misc";
+import { LanguageToggle } from "@/components/language-toggle";
 
 export function SidebarShell({
   width = 230,
@@ -10,7 +11,7 @@ export function SidebarShell({
 }) {
   return (
     <div
-      className={`hidden flex-none flex-col border-r border-black/[.08] bg-panel py-5 md:flex ${
+      className={`hidden flex-none flex-col border-r border-black/[.08] bg-panel py-5 md:flex print:hidden ${
         width === 240 ? "w-[240px]" : "w-[230px]"
       }`}
     >
@@ -168,7 +169,10 @@ export function MobileUserBar({
           </span>
           <span className="truncate text-[11px] text-white/45">{subtitle}</span>
         </div>
-        {actions && <div className="ml-auto flex-none">{actions}</div>}
+        <div className="ml-auto flex flex-none items-center gap-2">
+          <LanguageToggle inverted compact />
+          {actions}
+        </div>
       </div>
     </div>
   );
@@ -186,13 +190,18 @@ export function SidebarUserFooter({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mt-auto flex items-center gap-[10px] border-t border-black/[.07] px-[18px] pt-[14px]">
-      <Avatar initials={initials} size={28} />
-      <div className="flex flex-col">
-        <span className="text-[12.5px] font-medium text-ink">{name}</span>
-        <span className="text-[11.5px] text-meta">{subtitle}</span>
+    <div className="mt-auto flex flex-col gap-3 border-t border-black/[.07] px-[18px] pt-[14px]">
+      <div className="flex justify-end">
+        <LanguageToggle />
       </div>
-      {actions && <div className="ml-auto w-[60%]">{actions}</div>}
+      <div className="flex items-center gap-[10px]">
+        <Avatar initials={initials} size={28} />
+        <div className="flex flex-col">
+          <span className="text-[12.5px] font-medium text-ink">{name}</span>
+          <span className="text-[11.5px] text-meta">{subtitle}</span>
+        </div>
+        {actions && <div className="ml-auto w-[60%]">{actions}</div>}
+      </div>
     </div>
   );
 }

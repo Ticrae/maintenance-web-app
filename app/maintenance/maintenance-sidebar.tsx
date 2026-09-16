@@ -54,6 +54,11 @@ export function MaintenanceSidebar({
             count={completedCount}
             active={pathname === "/maintenance/completed"}
           />
+          <SidebarNavItem
+            href="/maintenance/inspections"
+            label={t.inspections}
+            active={pathname.startsWith("/maintenance/inspections")}
+          />
         </SidebarNavGroup>
         <SidebarUserFooter
           initials={initials}
@@ -76,6 +81,11 @@ export function MaintenanceSidebar({
             label: t.completed,
             count: completedCount,
             active: pathname === "/maintenance/completed",
+          },
+          {
+            href: "/maintenance/inspections",
+            label: t.inspections,
+            active: pathname.startsWith("/maintenance/inspections"),
           },
         ]}
       />

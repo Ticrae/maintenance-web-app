@@ -1,10 +1,15 @@
+import { LanguageToggle } from "@/components/language-toggle";
+
 export function AuthLogo() {
   return (
-    <div className="flex items-center gap-[10px]">
-      <div className="h-7 w-7 rounded-[7px] bg-graphite" />
-      <span className="text-[15px] font-semibold tracking-[-.01em] text-ink">
-        FixNest
-      </span>
+    <div className="flex items-center justify-between gap-[10px]">
+      <div className="flex items-center gap-[10px]">
+        <div className="h-7 w-7 rounded-[7px] bg-graphite" />
+        <span className="text-[15px] font-semibold tracking-[-.01em] text-ink">
+          FixNest
+        </span>
+      </div>
+      <LanguageToggle />
     </div>
   );
 }

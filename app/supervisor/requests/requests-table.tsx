@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { PageHeader } from "@/components/page-header";
 import { StatTile } from "@/components/ui/misc";
@@ -8,6 +9,8 @@ import { TextField, Select } from "@/components/ui/inputs";
 import { tableWrapClass, tableHeadRowClass, tableRowClass } from "@/components/ui/table";
 import type { Priority } from "@/lib/theme";
 import { assignRequest, type RequestStatus } from "@/app/actions/requests";
+import type { ContractorRow } from "@/app/actions/contractors";
+import { ContractorAssignmentDrawer } from "@/components/contractor-assignment-drawer";
 import { useDictionary } from "@/lib/i18n/language-provider";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
@@ -22,6 +25,7 @@ export type RequestRow = {
   description: string;
   created_at: string;
   homes: { name: string } | null;
+  assets: { id: string; name: string } | null;
 };
 
 export type Assignee = { id: string; first_name: string | null; last_name: string | null };
@@ -46,14 +50,17 @@ export function SupervisorRequestsTable({
   requests,
   profileMap,
   assignees,
+  contractors,
 }: {
   requests: RequestRow[];
   profileMap: Record<string, string>;
   assignees: Assignee[];
+  contractors: ContractorRow[];
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<RequestStatus | "All">("All");
   const [priorityFilter, setPriorityFilter] = useState<Priority | "All">("All");
+  const [contractorRequestId, setContractorRequestId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const dict = useDictionary();
@@ -168,9 +175,26 @@ export function SupervisorRequestsTable({
               <span className="font-mono text-xs font-medium text-faint">
                 {r.id.slice(0, 8).toUpperCase()}
               </span>
-              <span className="truncate pr-3 text-[13.5px] font-medium text-ink">
-                {r.description.split("\n")[0]}
-              </span>
+              <div className="flex flex-col gap-[2px] pr-3">
+                <span className="truncate text-[13.5px] font-medium text-ink">
+                  {r.description.split("\n")[0]}
+                </span>
+                {r.assets && (
+                  <Link
+                    href={`/supervisor/assets/${r.assets.id}`}
+                    className="truncate font-mono text-[10.5px] text-link"
+                  >
+                    🔧 {r.assets.name}
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setContractorRequestId(r.id)}
+                  className="w-fit truncate font-mono text-[10.5px] text-link hover:underline"
+                >
+                  🛠 {dict.common.contractorAssignment.title}
+                </button>
+              </div>
               <span className="truncate pr-3 text-[13px] text-subtle">{r.homes?.name ?? "—"}</span>
               <span className="truncate pr-3 text-[13px] text-subtle">{r.category}</span>
               <PriorityBadge priority={r.priority} />
@@ -197,6 +221,14 @@ export function SupervisorRequestsTable({
           )}
         </div>
       </div>
+
+      {contractorRequestId && (
+        <ContractorAssignmentDrawer
+          requestId={contractorRequestId}
+          contractors={contractors.filter((c) => c.status === "active")}
+          onClose={() => setContractorRequestId(null)}
+        />
+      )}
     </>
   );
 }

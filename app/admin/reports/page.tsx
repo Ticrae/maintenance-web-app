@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_SLA_HOURS } from "@/lib/sla";
 import { nowMs } from "@/lib/date";
+import { getRecurringProblems } from "@/app/actions/assets";
+import { getHomeSafetySummary } from "@/app/actions/safety";
 import { ReportsView, type UnassignedRow, type Assignee } from "./reports-view";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +26,7 @@ function median(values: number[]) {
 export default async function ReportsPage() {
   const admin = createAdminClient();
 
-  const [{ data: requests }, { data: settings }, { data: assignees }] =
+  const [{ data: requests }, { data: settings }, { data: assignees }, recurring, homeSafety] =
     await Promise.all([
       admin
         .from("requests")
@@ -56,6 +58,8 @@ export default async function ReportsPage() {
         .select("id, first_name, last_name, agency_id")
         .in("role", ["maintenance", "agency_admin"])
         .returns<Assignee[]>(),
+      getRecurringProblems(),
+      getHomeSafetySummary(),
     ]);
 
   const rows = requests ?? [];
@@ -154,6 +158,9 @@ export default async function ReportsPage() {
       categories={categories}
       unassigned={unassigned}
       assignees={assignees ?? []}
+      recurring={recurring}
+      recurringBasePath="/admin/assets"
+      homeSafety={homeSafety}
     />
   );
 }

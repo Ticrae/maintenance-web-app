@@ -52,6 +52,14 @@ export const GUIDE_STATUS: Record<GuideStatus, { bg: string; fg: string }> = {
   archived: { bg: "bg-selected", fg: "text-faint" },
 };
 
+export type AssetStatus = "active" | "out_of_service" | "retired";
+
+export const ASSET_STATUS: Record<AssetStatus, { bg: string; fg: string }> = {
+  active: { bg: "bg-success-bg", fg: "text-success" },
+  out_of_service: { bg: "bg-urgent-bg", fg: "text-urgent" },
+  retired: { bg: "bg-selected", fg: "text-faint" },
+};
+
 export type NotifTag = "status" | "comment" | "urgent" | "reminder";
 
 export const NOTIF_TAG: Record<

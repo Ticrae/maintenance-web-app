@@ -67,6 +67,11 @@ export function StaffSidebar({
             badge={recentActivityCount || undefined}
             active={pathname === "/staff/notifications"}
           />
+          <SidebarNavItem
+            href="/staff/inspections"
+            label={t.inspections}
+            active={pathname.startsWith("/staff/inspections")}
+          />
         </SidebarNavGroup>
         <SidebarSectionLabel>{t.filter}</SidebarSectionLabel>
         <div className="flex flex-col gap-[2px] px-3">
@@ -107,6 +112,11 @@ export function StaffSidebar({
             label: t.notifications,
             count: recentActivityCount || undefined,
             active: pathname === "/staff/notifications",
+          },
+          {
+            href: "/staff/inspections",
+            label: t.inspections,
+            active: pathname.startsWith("/staff/inspections"),
           },
         ]}
       />

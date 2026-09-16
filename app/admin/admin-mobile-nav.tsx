@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { TABS } from "@/components/top-tabs";
 import { signOut } from "@/app/actions/auth";
+import { LanguageToggle } from "@/components/language-toggle";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
 function SignOutRow() {
@@ -37,16 +38,19 @@ export function AdminMobileNav({ active }: { active: string }) {
             {dict.common.adminBadge}
           </span>
         </div>
-        <button
-          type="button"
-          aria-label="Open menu"
-          onClick={() => setOpen(true)}
-          className="flex h-11 w-11 flex-none flex-col items-center justify-center gap-1 rounded-md hover:bg-hover"
-        >
-          <span className="h-[2px] w-5 rounded-full bg-ink" />
-          <span className="h-[2px] w-5 rounded-full bg-ink" />
-          <span className="h-[2px] w-5 rounded-full bg-ink" />
-        </button>
+        <div className="flex flex-none items-center gap-2">
+          <LanguageToggle />
+          <button
+            type="button"
+            aria-label="Open menu"
+            onClick={() => setOpen(true)}
+            className="flex h-11 w-11 flex-none flex-col items-center justify-center gap-1 rounded-md hover:bg-hover"
+          >
+            <span className="h-[2px] w-5 rounded-full bg-ink" />
+            <span className="h-[2px] w-5 rounded-full bg-ink" />
+            <span className="h-[2px] w-5 rounded-full bg-ink" />
+          </button>
+        </div>
       </div>
 
       {open && (

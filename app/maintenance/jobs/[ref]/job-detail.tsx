@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AddPhotoTile, Stepper, Avatar, Eyebrow } from "@/components/ui/misc";
 import { UrgentTag } from "@/components/ui/badges";
 import { Button, buttonClasses } from "@/components/ui/button";
-import { TextArea, Select } from "@/components/ui/inputs";
+import { TextArea, TextField, Select } from "@/components/ui/inputs";
 import { relativeTime } from "@/lib/date";
 import {
   completeJob,
@@ -70,20 +70,39 @@ export function JobDetail({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [showCompletePanel, setShowCompletePanel] = useState(false);
+  const [resolutionNotes, setResolutionNotes] = useState("");
+  const [cost, setCost] = useState("");
+
   const [title, ...rest] = job.description.split("\n");
   const details = rest.join("\n");
 
   async function handleStatusChange(status: RequestStatus) {
+    if (status === "Completed") {
+      setShowCompletePanel(true);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      if (status === "Completed") {
-        await completeJob(job.id);
-        router.push("/maintenance/completed");
-        return;
-      }
       await updateJobStage(job.id, status);
       setBusy(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t.updateError);
+      setBusy(false);
+    }
+  }
+
+  async function handleComplete(withNotes: boolean) {
+    setBusy(true);
+    setError(null);
+    try {
+      const parsedCost = Number(cost);
+      await completeJob(job.id, withNotes ? {
+        resolutionNotes: resolutionNotes.trim() || undefined,
+        cost: cost.trim() && !Number.isNaN(parsedCost) ? parsedCost : undefined,
+      } : undefined);
+      router.push("/maintenance/completed");
     } catch (e) {
       setError(e instanceof Error ? e.message : t.updateError);
       setBusy(false);
@@ -157,6 +176,49 @@ export function JobDetail({
             <p className="text-sm text-red-700" role="alert">
               {error}
             </p>
+          )}
+          {showCompletePanel && (
+            <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
+              <Eyebrow>{t.markCompleted}</Eyebrow>
+              <div className="flex flex-col gap-[7px]">
+                <label className="text-[13px] font-medium text-body">
+                  {t.completionNotesLabel}
+                </label>
+                <TextArea
+                  value={resolutionNotes}
+                  onChange={(e) => setResolutionNotes(e.target.value)}
+                  className="h-20"
+                  disabled={busy}
+                />
+              </div>
+              <div className="flex flex-col gap-[7px]">
+                <label className="text-[13px] font-medium text-body">
+                  {t.completionCostLabel}
+                </label>
+                <TextField
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={cost}
+                  onChange={(e) => setCost(e.target.value)}
+                  disabled={busy}
+                  className="w-40"
+                />
+              </div>
+              <div className="flex flex-wrap gap-[10px]">
+                <Button onClick={() => handleComplete(true)} disabled={busy}>
+                  {t.completeButton}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => handleComplete(false)}
+                  disabled={busy}
+                  className="text-[13px] text-meta hover:text-ink disabled:opacity-50"
+                >
+                  {t.completeWithoutNotes}
+                </button>
+              </div>
+            </div>
           )}
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">

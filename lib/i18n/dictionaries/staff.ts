@@ -3,6 +3,7 @@ export const staff = {
     nav: {
       myRequests: "My requests",
       notifications: "Notifications",
+      inspections: "Inspections",
       filter: "Filter",
       openCount: (n: number) => `Open · ${n}`,
       inProgressCount: (n: number) => `In progress · ${n}`,
@@ -33,6 +34,8 @@ export const staff = {
       noHomesAvailable: "No homes available",
       roomLocation: "Room / location (optional)",
       roomPlaceholder: "e.g. Room 12",
+      whichItemLabel: "Which item? (optional)",
+      notSureOption: "Not sure / doesn't apply",
       descriptionLabel: "Description",
       photosLabel: "Photos",
       photoHint: "JPG, PNG, WebP or GIF. Maximum 10 MB per photo.",
@@ -122,6 +125,7 @@ export const staff = {
     nav: {
       myRequests: "Mes demandes",
       notifications: "Notifications",
+      inspections: "Inspections",
       filter: "Filtrer",
       openCount: (n: number) => `Ouvertes · ${n}`,
       inProgressCount: (n: number) => `En cours · ${n}`,
@@ -152,6 +156,8 @@ export const staff = {
       noHomesAvailable: "Aucune maison disponible",
       roomLocation: "Pièce / emplacement (optionnel)",
       roomPlaceholder: "ex. Chambre 12",
+      whichItemLabel: "Quel équipement ? (optionnel)",
+      notSureOption: "Pas sûr / ne s'applique pas",
       descriptionLabel: "Description",
       photosLabel: "Photos",
       photoHint: "JPG, PNG, WebP ou GIF. Maximum 10 Mo par photo.",

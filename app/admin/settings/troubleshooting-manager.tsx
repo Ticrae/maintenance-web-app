@@ -204,7 +204,7 @@ export function TroubleshootingManager({
             ))}
           </div>
 
-          <div className="min-w-0 flex-1 rounded-lg border border-black/[.09] bg-surface">
+          <div className="min-w-0 flex-1 overflow-auto rounded-lg border border-black/[.09] bg-surface">
             {!selectedGuideId ? (
               <div className="flex h-full items-center justify-center p-8 text-center text-sm text-meta">
                 {t.selectGuidePrompt}

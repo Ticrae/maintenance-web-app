@@ -1,11 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Eyebrow, StatTile } from "@/components/ui/misc";
 import { Select } from "@/components/ui/inputs";
 import { relativeTime } from "@/lib/date";
 import { assignRequest } from "@/app/actions/requests";
+import type { getRecurringProblems } from "@/app/actions/assets";
+import type { getHomeSafetySummary } from "@/app/actions/safety";
+import { HomeSafety } from "@/components/home-safety";
 import { useDictionary } from "@/lib/i18n/language-provider";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
@@ -37,6 +41,9 @@ export function ReportsView({
   categories,
   unassigned,
   assignees,
+  recurring,
+  recurringBasePath,
+  homeSafety,
 }: {
   totalRequests: number;
   medianResponse: string;
@@ -47,6 +54,9 @@ export function ReportsView({
   categories: { category: string; value: number; pct: number }[];
   unassigned: UnassignedRow[];
   assignees: Assignee[];
+  recurring: Awaited<ReturnType<typeof getRecurringProblems>>;
+  recurringBasePath: string;
+  homeSafety: Awaited<ReturnType<typeof getHomeSafetySummary>>;
 }) {
   const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +79,8 @@ export function ReportsView({
     <div className="flex flex-1 flex-col overflow-auto">
       <PageHeader title={t.title} subtitle={t.subtitle} />
       <div className="flex flex-1 flex-col gap-5 bg-canvas p-4 sm:p-7">
+        <HomeSafety summary={homeSafety} assetBasePath="/admin/assets" />
+
         <div className="flex flex-wrap gap-3">
           <StatTile label={dict.common.stat.totalRequests} value={totalRequests} />
           <StatTile label={t.medianResponse} value={medianResponse} mono />
@@ -117,6 +129,8 @@ export function ReportsView({
           </div>
         </div>
 
+        <RecurringProblems recurring={recurring} basePath={recurringBasePath} />
+
         <div className="flex flex-col gap-3 rounded-lg border border-black/[.09] bg-surface p-5">
           <div className="flex items-center justify-between">
             <Eyebrow>{t.unassignedHeading}</Eyebrow>
@@ -159,6 +173,64 @@ export function ReportsView({
             {unassigned.length === 0 && <span className="py-2 text-sm text-meta">{t.allAssigned}</span>}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function RecurringProblems({
+  recurring,
+  basePath,
+}: {
+  recurring: Awaited<ReturnType<typeof getRecurringProblems>>;
+  basePath: string;
+}) {
+  const dict = useDictionary();
+  const t = dict.common.recurring;
+  const maxTypeCount = Math.max(1, ...recurring.assetTypeCounts.map((c) => c.count));
+
+  return (
+    <div className="flex flex-col gap-4 rounded-lg border border-black/[.09] bg-surface p-5">
+      <Eyebrow>{t.title}</Eyebrow>
+
+      {recurring.assetTypeCounts.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <span className="font-mono text-[10.5px] uppercase tracking-[.08em] text-meta">{t.byAssetType}</span>
+          {recurring.assetTypeCounts.map((c) => (
+            <div key={c.assetType} className="flex items-center gap-3">
+              <span className="w-[140px] flex-none truncate text-[12.5px] text-body">{c.assetType}</span>
+              <div className="h-[10px] flex-1 overflow-hidden rounded-full bg-selected">
+                <div
+                  className="h-full rounded-full bg-graphite"
+                  style={{ width: `${Math.round((c.count / maxTypeCount) * 100)}%` }}
+                />
+              </div>
+              <span className="w-8 flex-none text-right font-mono text-[11.5px] text-eyebrow">{c.count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2">
+        {recurring.flaggedAssets.map((a) => (
+          <Link
+            key={a.id}
+            href={`${basePath}/${a.id}`}
+            className="flex flex-col gap-1 rounded-md border border-urgent-bd bg-urgent-bg px-4 py-3 hover:border-urgent"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[13.5px] font-medium text-urgent">
+                ⚠️ {a.name} · {a.homeName}
+              </span>
+              <span className="font-mono text-[11px] text-urgent">
+                {t.failuresInWindow(a.recentFailures, recurring.windowDays)}
+              </span>
+            </div>
+            {a.topCategory && <span className="text-[12px] text-urgent">{t.mostCommonIssue(a.topCategory)}</span>}
+            <span className="text-[12px] text-urgent">{t.recommendedAction}</span>
+          </Link>
+        ))}
+        {recurring.flaggedAssets.length === 0 && <span className="text-sm text-meta">{t.noRecurring}</span>}
       </div>
     </div>
   );

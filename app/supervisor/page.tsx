@@ -3,7 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/page-header";
 import { PriorityBadge } from "@/components/ui/badges";
 import { Eyebrow, StatTile } from "@/components/ui/misc";
+import { HomeSafety } from "@/components/home-safety";
 import { getServerDictionary } from "@/lib/i18n/server";
+import { getHomeSafetySummary } from "@/app/actions/safety";
 import { redirect } from "next/navigation";
 
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
@@ -40,6 +42,10 @@ export default async function SupervisorPage() {
         .eq("agency_id", agencyId)
         .in("status", ACTIVE_STATUSES)
     : { data: [] };
+
+  const homeSafety = agencyId
+    ? await getHomeSafetySummary(agencyId)
+    : { totals: { open: 0, overdue: 0, safetyIssues: 0, criticalAssets: 0 }, attentionRequired: [] };
 
   const rows = requests ?? [];
 
@@ -99,6 +105,8 @@ export default async function SupervisorPage() {
             <p className="text-sm text-meta">{t.noUrgentJobs}</p>
           )}
         </section>
+
+        <HomeSafety summary={homeSafety} assetBasePath="/supervisor/assets" />
 
         <section className="flex flex-col gap-3 rounded-lg border border-black/[.09] bg-surface p-5">
           <Eyebrow>{t.openRequestsByHome}</Eyebrow>

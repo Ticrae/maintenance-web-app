@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import { getContractors } from "@/app/actions/contractors";
 import { SupervisorRequestsTable, type RequestRow, type Assignee } from "./requests-table";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +28,7 @@ export default async function SupervisorRequestsPage() {
   const { data: requests } = agencyId
     ? await admin
         .from("requests")
-        .select("id, home_id, reported_by, assigned_to, category, priority, status, description, created_at, homes(name)")
+        .select("id, home_id, reported_by, assigned_to, category, priority, status, description, created_at, homes(name), assets(id, name)")
         .eq("agency_id", agencyId)
         .order("created_at", { ascending: false })
         .returns<RequestRow[]>()
@@ -54,5 +55,14 @@ export default async function SupervisorRequestsPage() {
         .returns<Assignee[]>()
     : { data: [] };
 
-  return <SupervisorRequestsTable requests={rows} profileMap={profileMap} assignees={assignees ?? []} />;
+  const contractors = agencyId ? await getContractors(agencyId) : [];
+
+  return (
+    <SupervisorRequestsTable
+      requests={rows}
+      profileMap={profileMap}
+      assignees={assignees ?? []}
+      contractors={contractors}
+    />
+  );
 }

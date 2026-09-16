@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getContractors } from "@/app/actions/contractors";
 import { RequestsTable, type RequestRow, type Assignee } from "./requests-table";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +9,7 @@ export default async function AdminRequestsPage() {
 
   const { data: requests } = await admin
     .from("requests")
-    .select("*, homes(name), agencies(name)")
+    .select("*, homes(name), agencies(name), assets(id, name)")
     .order("created_at", { ascending: false })
     .returns<RequestRow[]>();
 
@@ -40,11 +41,14 @@ export default async function AdminRequestsPage() {
     .in("role", ["maintenance", "agency_admin"])
     .returns<Assignee[]>();
 
+  const contractors = await getContractors();
+
   return (
     <RequestsTable
       requests={rows}
       profileMap={profileMap}
       assignees={assignees ?? []}
+      contractors={contractors}
     />
   );
 }

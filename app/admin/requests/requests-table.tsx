@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { PageHeader } from "@/components/page-header";
 import { StatTile } from "@/components/ui/misc";
@@ -17,6 +18,8 @@ import {
   assignRequest,
   type RequestStatus,
 } from "@/app/actions/requests";
+import type { ContractorRow } from "@/app/actions/contractors";
+import { ContractorAssignmentDrawer } from "@/components/contractor-assignment-drawer";
 import { useDictionary } from "@/lib/i18n/language-provider";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
@@ -33,6 +36,7 @@ export type RequestRow = {
   created_at: string;
   homes: { name: string } | null;
   agencies: { name: string } | null;
+  assets: { id: string; name: string } | null;
 };
 
 export type Assignee = {
@@ -63,16 +67,19 @@ export function RequestsTable({
   requests,
   profileMap,
   assignees,
+  contractors,
 }: {
   requests: RequestRow[];
   profileMap: Record<string, string>;
   assignees: Assignee[];
+  contractors: ContractorRow[];
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<RequestStatus | "All">(
     "All",
   );
   const [priorityFilter, setPriorityFilter] = useState<Priority | "All">("All");
+  const [contractorRequestId, setContractorRequestId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const dict = useDictionary();
   const t = dict.admin.requests;
@@ -182,9 +189,26 @@ export function RequestsTable({
                 <span className="font-mono text-xs font-medium text-faint">
                   {r.id.slice(0, 8)}
                 </span>
-                <span className="truncate pr-3 text-[13.5px] font-medium text-ink">
-                  {r.description}
-                </span>
+                <div className="flex flex-col gap-[2px] pr-3">
+                  <span className="truncate text-[13.5px] font-medium text-ink">
+                    {r.description}
+                  </span>
+                  {r.assets && (
+                    <Link
+                      href={`/admin/assets/${r.assets.id}`}
+                      className="truncate font-mono text-[10.5px] text-link"
+                    >
+                      🔧 {r.assets.name}
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setContractorRequestId(r.id)}
+                    className="w-fit truncate font-mono text-[10.5px] text-link hover:underline"
+                  >
+                    🛠 {dict.common.contractorAssignment.title}
+                  </button>
+                </div>
                 <div className="flex flex-col gap-[2px] pr-3">
                   <span className="truncate text-[13px] text-subtle">
                     {r.homes?.name ?? "—"}
@@ -246,6 +270,18 @@ export function RequestsTable({
           )}
         </div>
       </div>
+
+      {contractorRequestId && (
+        <ContractorAssignmentDrawer
+          requestId={contractorRequestId}
+          contractors={contractors.filter(
+            (c) =>
+              c.status === "active" &&
+              c.agency_id === requests.find((r) => r.id === contractorRequestId)?.agency_id
+          )}
+          onClose={() => setContractorRequestId(null)}
+        />
+      )}
     </div>
   );
 }

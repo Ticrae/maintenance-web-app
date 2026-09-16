@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAssetTypes, getGuides } from "@/app/actions/troubleshooting";
 import { getAgencies } from "@/app/actions/homes";
+import { getTemplates } from "@/app/actions/inspections";
 import { SettingsShell } from "./settings-shell";
 import type { AppSettings } from "./settings-form";
 
@@ -14,10 +15,11 @@ export default async function AdminSettingsPage() {
     .eq("id", true)
     .maybeSingle<AppSettings>();
 
-  const [assetTypes, agencies, guides] = await Promise.all([
+  const [assetTypes, agencies, guides, templates] = await Promise.all([
     getAssetTypes(),
     getAgencies(),
     getGuides(),
+    getTemplates(),
   ]);
 
   return (
@@ -26,6 +28,7 @@ export default async function AdminSettingsPage() {
       assetTypes={assetTypes}
       agencies={agencies.map((a) => ({ id: a.id, name: a.name }))}
       guides={guides}
+      templates={templates}
     />
   );
 }

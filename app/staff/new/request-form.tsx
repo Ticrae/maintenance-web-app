@@ -11,6 +11,7 @@ import {
   submitStaffRequest,
   type TroubleshootingSummary,
 } from "@/app/actions/requests";
+import { getAssetsForHome } from "@/app/actions/assets";
 import { uploadRequestPhoto } from "@/app/actions/photos";
 import type { Priority } from "@/lib/theme";
 import { useDictionary } from "@/lib/i18n/language-provider";
@@ -49,6 +50,23 @@ export function RequestForm({
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("Medium");
   const [urgent, setUrgent] = useState(false);
+
+  const [assetId, setAssetId] = useState("");
+  const [homeAssets, setHomeAssets] = useState<{ id: string; name: string }[]>([]);
+
+  // Home changes are user-driven (the Home <Select>'s onChange below), so the
+  // previous home's item list/selection is cleared there rather than in this
+  // effect — this effect only fetches the new list for whichever home is current.
+  useEffect(() => {
+    if (!homeId) return;
+    let cancelled = false;
+    getAssetsForHome(homeId).then((assets) => {
+      if (!cancelled) setHomeAssets(assets.map((a) => ({ id: a.id, name: a.name })));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [homeId]);
 
   const [photos, setPhotos] = useState<PhotoPreview[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -147,6 +165,7 @@ export function RequestForm({
         priority,
         urgent,
         troubleshooting,
+        assetId: assetId || null,
       });
 
       /*
@@ -262,7 +281,11 @@ export function RequestForm({
 
                 <Select
                   value={homeId}
-                  onChange={(e) => setHomeId(e.target.value)}
+                  onChange={(e) => {
+                    setHomeId(e.target.value);
+                    setAssetId("");
+                    setHomeAssets([]);
+                  }}
                   required
                 >
                   {homes.length === 0 && (
@@ -306,6 +329,23 @@ export function RequestForm({
                 placeholder={t.roomPlaceholder}
               />
             </div>
+
+            {homeAssets.length > 0 && (
+              <div className="flex flex-col gap-[7px]">
+                <label className="text-[13px] font-medium text-body">
+                  {t.whichItemLabel}
+                </label>
+
+                <Select value={assetId} onChange={(e) => setAssetId(e.target.value)}>
+                  <option value="">{t.notSureOption}</option>
+                  {homeAssets.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
 
             <div className="flex flex-col gap-[7px]">
               <label className="text-[13px] font-medium text-body">

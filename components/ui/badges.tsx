@@ -7,12 +7,14 @@ import {
   NOTIF_TAG,
   SAFETY_LEVEL,
   GUIDE_STATUS,
+  ASSET_STATUS,
   type Priority,
   type Role,
   type Outcome,
   type NotifTag,
   type SafetyLevel,
   type GuideStatus,
+  type AssetStatus,
 } from "@/lib/theme";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
@@ -85,6 +87,18 @@ export function SafetyBadge({ level, short = false }: { level: SafetyLevel; shor
     >
       <span aria-hidden>{c.dot}</span>
       {short ? dict.admin.troubleshooting.safetyShort[level] : dict.admin.troubleshooting.safety[level]}
+    </span>
+  );
+}
+
+export function AssetStatusBadge({ status }: { status: AssetStatus }) {
+  const c = ASSET_STATUS[status];
+  const dict = useDictionary();
+  return (
+    <span
+      className={`inline-flex w-fit items-center rounded-[5px] px-[9px] py-[5px] text-[11.5px] font-medium ${c.bg} ${c.fg}`}
+    >
+      {dict.common.assetStatus[status]}
     </span>
   );
 }

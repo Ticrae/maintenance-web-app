@@ -16,39 +16,6 @@ export type RequestStatus =
   | "Completed"
   | "Cancelled";
 
-const ACTIVE_ASSIGNED_STATUSES: RequestStatus[] = ["Assigned", "In Progress", "Waiting for Parts"];
-
-// Picks the maintenance worker in the agency with the fewest active jobs
-// right now, so new requests spread out across the team instead of piling
-// on whoever gets assigned first.
-async function pickMaintenanceAssignee(
-  admin: ReturnType<typeof createAdminClient>,
-  agencyId: string
-): Promise<string | null> {
-  const { data: workers } = await admin
-    .from("profiles")
-    .select("id")
-    .eq("agency_id", agencyId)
-    .eq("role", "maintenance");
-
-  if (!workers || workers.length === 0) return null;
-  if (workers.length === 1) return workers[0].id;
-
-  const workerIds = workers.map((w) => w.id);
-  const { data: activeJobs } = await admin
-    .from("requests")
-    .select("assigned_to")
-    .in("assigned_to", workerIds)
-    .in("status", ACTIVE_ASSIGNED_STATUSES);
-
-  const load: Record<string, number> = Object.fromEntries(workerIds.map((id) => [id, 0]));
-  for (const job of activeJobs ?? []) {
-    if (job.assigned_to) load[job.assigned_to] = (load[job.assigned_to] ?? 0) + 1;
-  }
-
-  return workerIds.reduce((best, id) => (load[id] < load[best] ? id : best), workerIds[0]);
-}
-
 // --- Admin: manage any request -------------------------------------------
 
 export async function updateRequestStatus(
@@ -147,6 +114,7 @@ export async function submitStaffRequest(input: {
   priority: Priority;
   urgent: boolean;
   troubleshooting?: TroubleshootingSummary | null;
+  assetId?: string | null;
 }) {
   const profile = await requireRole(["staff"]);
 
@@ -165,6 +133,20 @@ export async function submitStaffRequest(input: {
 
   if (!home) {
     throw new Error("Choose a valid home.");
+  }
+
+  let assetId: string | null = null;
+  if (input.assetId) {
+    const { data: asset } = await admin
+      .from("assets")
+      .select("id")
+      .eq("id", input.assetId)
+      .eq("home_id", input.homeId)
+      .maybeSingle();
+    if (!asset) {
+      throw new Error("Choose a valid item for this home.");
+    }
+    assetId = asset.id;
   }
 
   const locationLine = input.location.trim()
@@ -186,17 +168,18 @@ export async function submitStaffRequest(input: {
 
   lines.push(locationLine);
 
-  const assigneeId = await pickMaintenanceAssignee(admin, profile.agency_id);
-
+  // Left unassigned and Open — a maintenance worker claims it via
+  // acceptRequest below, rather than one being auto-picked here.
   const { data, error } = await admin
     .from("requests")
     .insert({
       agency_id: profile.agency_id,
       home_id: input.homeId,
+      asset_id: assetId,
       category: input.category,
       priority: input.urgent ? "Urgent" : input.priority,
-      status: assigneeId ? "Assigned" : "Open",
-      assigned_to: assigneeId,
+      status: "Open" as const,
+      assigned_to: null,
       description: lines.join("\n"),
       reported_by: profile.id,
     })
@@ -268,7 +251,10 @@ export async function updateJobStage(
   revalidatePath(`/maintenance/jobs/${requestId}`);
 }
 
-export async function completeJob(requestId: string) {
+export async function completeJob(
+  requestId: string,
+  details?: { resolutionNotes?: string; cost?: number }
+) {
   const profile = await requireRole(["maintenance"]);
 
   const admin = createAdminClient();
@@ -277,6 +263,9 @@ export async function completeJob(requestId: string) {
     .from("requests")
     .update({
       status: "Completed" as const,
+      completed_at: new Date().toISOString(),
+      ...(details?.resolutionNotes?.trim() && { resolution_notes: details.resolutionNotes.trim() }),
+      ...(details?.cost !== undefined && { cost: details.cost }),
     })
     .eq("id", requestId)
     .eq("assigned_to", profile.id)

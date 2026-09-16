@@ -4,6 +4,7 @@ export const maintenance = {
       queue: "Queue",
       myJobs: "My jobs",
       completed: "Completed",
+      inspections: "Inspections",
     },
     layout: {
       you: "You",
@@ -70,6 +71,10 @@ export const maintenance = {
       updateError: "Could not update this job.",
       commentError: "Could not post comment.",
       photoError: "Could not upload photo.",
+      completionNotesLabel: "What fixed it? (optional)",
+      completionCostLabel: "Cost (optional)",
+      completeWithoutNotes: "Complete without notes",
+      completeButton: "Complete",
     },
     completed: {
       subtitle: (n: number) => `${n} jobs`,
@@ -90,6 +95,7 @@ export const maintenance = {
       queue: "File d'attente",
       myJobs: "Mes interventions",
       completed: "Terminées",
+      inspections: "Inspections",
     },
     layout: {
       you: "Vous",
@@ -156,6 +162,10 @@ export const maintenance = {
       updateError: "Impossible de mettre à jour cette intervention.",
       commentError: "Impossible de publier le commentaire.",
       photoError: "Impossible de téléverser la photo.",
+      completionNotesLabel: "Qu'est-ce qui a résolu le problème ? (optionnel)",
+      completionCostLabel: "Coût (optionnel)",
+      completeWithoutNotes: "Terminer sans notes",
+      completeButton: "Terminer",
     },
     completed: {
       subtitle: (n: number) => `${n} interventions`,

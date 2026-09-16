@@ -56,6 +56,7 @@ create table public.assets (
   location text,
   status text not null default 'active',
   purchase_date date,
+  purchase_price numeric(10,2),
   warranty_expiry date,
   notes text,
   created_at timestamptz not null default now(),
@@ -76,6 +77,9 @@ create table public.requests (
   priority text not null,
   status text not null default 'Open',
   description text not null,
+  cost numeric(10,2),
+  resolution_notes text,
+  completed_at timestamptz,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   constraint requests_priority_check check (
@@ -155,6 +159,88 @@ create table public.troubleshooting_options (
   )
 );
 
--- See migrations/0001_app_settings.sql, migrations/0002_request_photos_bucket.sql
--- and migrations/0003_troubleshooting_safety_level.sql for the app_settings
--- table, the request-photos storage bucket, and troubleshooting_steps.safety_level.
+create table public.inspection_templates (
+  id uuid primary key default gen_random_uuid(),
+  agency_id uuid not null references public.agencies(id) on delete cascade,
+  name text not null,
+  description text,
+  status text not null default 'draft',
+  created_by uuid not null references public.profiles(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint inspection_templates_status_check check (status = any (array['draft','published','archived']))
+);
+
+create table public.inspection_items (
+  id uuid primary key default gen_random_uuid(),
+  template_id uuid not null references public.inspection_templates(id) on delete cascade,
+  section text,
+  label text not null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table public.inspection_runs (
+  id uuid primary key default gen_random_uuid(),
+  template_id uuid not null references public.inspection_templates(id),
+  agency_id uuid not null references public.agencies(id),
+  home_id uuid not null references public.homes(id) on delete cascade,
+  performed_by uuid not null references public.profiles(id),
+  status text not null default 'in_progress',
+  started_at timestamptz not null default now(),
+  completed_at timestamptz,
+  constraint inspection_runs_status_check check (status = any (array['in_progress','completed']))
+);
+
+create table public.inspection_results (
+  id uuid primary key default gen_random_uuid(),
+  run_id uuid not null references public.inspection_runs(id) on delete cascade,
+  item_id uuid not null references public.inspection_items(id) on delete cascade,
+  passed boolean not null,
+  notes text,
+  request_id uuid references public.requests(id) on delete set null,
+  created_at timestamptz not null default now(),
+  constraint inspection_results_run_item_unique unique (run_id, item_id)
+);
+
+create table public.contractors (
+  id uuid primary key default gen_random_uuid(),
+  agency_id uuid not null references public.agencies(id) on delete cascade,
+  name text not null,
+  trade text,
+  contact_name text,
+  phone text,
+  email text,
+  notes text,
+  status text not null default 'active',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint contractors_status_check check (status = any (array['active','inactive']))
+);
+
+create table public.request_contractor_assignments (
+  id uuid primary key default gen_random_uuid(),
+  request_id uuid not null references public.requests(id) on delete cascade,
+  contractor_id uuid not null references public.contractors(id),
+  status text not null default 'awaiting',
+  sent_at timestamptz not null default now(),
+  appointment_at timestamptz,
+  quote_amount numeric(10,2),
+  invoice_status text not null default 'pending',
+  notes text,
+  created_by uuid not null references public.profiles(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint request_contractor_assignments_status_check
+    check (status = any (array['awaiting','scheduled','completed','cancelled'])),
+  constraint request_contractor_assignments_invoice_check
+    check (invoice_status = any (array['pending','received','paid']))
+);
+
+-- See migrations/0001_app_settings.sql, migrations/0002_request_photos_bucket.sql,
+-- migrations/0003_troubleshooting_safety_level.sql, migrations/0004_asset_case_files.sql,
+-- migrations/0005_asset_purchase_price.sql, migrations/0006_inspections.sql and
+-- migrations/0007_contractors.sql for the app_settings table, the request-photos storage
+-- bucket, troubleshooting_steps.safety_level, requests.cost/resolution_notes/completed_at,
+-- assets.purchase_price, the inspection_templates/_items/_runs/_results tables, and the
+-- contractors/request_contractor_assignments tables.
