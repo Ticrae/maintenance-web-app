@@ -18,6 +18,9 @@ import {
 } from "@/lib/theme";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Colored pill badges for the app's various enum types (priority, role,
+// outcome, notification tag, safety level, asset status, guide status).
+// Each pulls its colors from lib/theme.ts and its label from the current dictionary.
 export function PriorityBadge({ priority }: { priority: Priority }) {
   const c = PRIORITY[priority];
   const dict = useDictionary();
@@ -30,6 +33,7 @@ export function PriorityBadge({ priority }: { priority: Priority }) {
   );
 }
 
+// Small "urgent" flag chip — text isn't translated since it's a compact tag, not a sentence
 export function UrgentTag() {
   return (
     <span className="inline-flex flex-none items-center rounded bg-urgent-bg px-[6px] py-[4px] font-mono text-[9.5px] font-semibold uppercase tracking-[.08em] text-urgent">
@@ -74,10 +78,13 @@ export function NotifTagBadge({ tag }: { tag: NotifTag }) {
   );
 }
 
+// Small dot indicating an unread notification
 export function UnreadDot() {
   return <span className="h-[7px] w-[7px] flex-none rounded-full bg-link" aria-hidden />;
 }
 
+// `short` picks between the long safety description and its compact form
+// (e.g. list rows vs. detail panels)
 export function SafetyBadge({ level, short = false }: { level: SafetyLevel; short?: boolean }) {
   const c = SAFETY_LEVEL[level];
   const dict = useDictionary();

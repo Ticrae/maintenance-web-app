@@ -18,6 +18,8 @@ export type RequestStatus =
 
 // --- Admin: manage any request -------------------------------------------
 
+// Force-sets a request's status; super-admin only (agency_admin/maintenance
+// change status through their own scoped actions below instead)
 export async function updateRequestStatus(
   requestId: string,
   status: RequestStatus
@@ -37,6 +39,8 @@ export async function updateRequestStatus(
   revalidatePath("/admin/reports");
 }
 
+// Assigns (or unassigns, when userId is null) a request to a maintenance
+// worker. Also flips status to "Assigned" on assignment.
 export async function assignRequest(
   requestId: string,
   userId: string | null
@@ -105,6 +109,10 @@ export type TroubleshootingSummary = {
   outcome: "unresolved" | "stopped";
 };
 
+// Creates a new maintenance request on behalf of a staff member. Validates
+// that the chosen home (and optional asset) actually belongs to the staff
+// member's agency, and folds the optional troubleshooting summary + room
+// location into the description text (see TroubleshootingSummary above).
 export async function submitStaffRequest(input: {
   title: string;
   homeId: string;
@@ -201,6 +209,10 @@ export async function submitStaffRequest(input: {
 
 // --- Maintenance: accept, progress, complete a job --------------------------
 
+// Claims an unassigned job for the current maintenance worker. The
+// `.is("assigned_to", null)` filter makes this atomic against a race with
+// another worker accepting the same job — if it's already taken, the update
+// matches zero rows and we surface that as an error instead.
 export async function acceptRequest(requestId: string) {
   const profile = await requireRole(["maintenance"]);
 
@@ -226,6 +238,8 @@ export async function acceptRequest(requestId: string) {
   revalidatePath("/maintenance/jobs");
 }
 
+// Moves a job through its lifecycle (In Progress / Waiting for Parts / etc);
+// scoped to jobs assigned to the calling worker.
 export async function updateJobStage(
   requestId: string,
   status: RequestStatus
@@ -251,6 +265,8 @@ export async function updateJobStage(
   revalidatePath(`/maintenance/jobs/${requestId}`);
 }
 
+// Marks a job completed with optional resolution notes/cost; scoped to jobs
+// assigned to the calling worker.
 export async function completeJob(
   requestId: string,
   details?: { resolutionNotes?: string; cost?: number }

@@ -13,8 +13,11 @@ import { TextField, Select } from "@/components/ui/inputs";
 import { tableWrapClass, tableHeadRowClass, tableRowClass } from "@/components/ui/table";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Shared grid-template-columns for both the header row and each data row, so
+// their columns always line up
 const GRID_COLS = "grid-cols-[minmax(180px,1fr)_140px_180px_140px_110px]";
 
+// Local editable copy of a contractor's fields while the create/edit drawer is open
 type FormState = {
   name: string;
   trade: string;
@@ -24,6 +27,10 @@ type FormState = {
   agency_id: string;
 };
 
+// Shared contractor directory for both admin and supervisor — `namespace`
+// only picks which role's translation strings to display. Supervisor's
+// `agencies` list is always length 1 (their own agency), which is why the
+// agency select/column below only render when there's more than one.
 export function ContractorsView({
   contractors,
   agencies,
@@ -58,6 +65,7 @@ export function ContractorsView({
     return c.name.toLowerCase().includes(q) || (c.trade ?? "").toLowerCase().includes(q);
   });
 
+  // Resets the drawer to a blank form for adding a new contractor
   function openCreate() {
     setEditingId(null);
     setForm(emptyForm);
@@ -65,6 +73,7 @@ export function ContractorsView({
     setDrawerOpen(true);
   }
 
+  // Preloads the drawer's form with an existing contractor's fields
   function openEdit(c: ContractorRow) {
     setEditingId(c.id);
     setForm({
@@ -79,6 +88,7 @@ export function ContractorsView({
     setDrawerOpen(true);
   }
 
+  // Creates or updates the contractor depending on whether one is being edited
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim() || !form.agency_id) return;
@@ -108,6 +118,7 @@ export function ContractorsView({
     }
   }
 
+  // Soft-deletes a contractor after confirmation (keeps their history intact)
   async function handleRetire(c: ContractorRow) {
     if (!window.confirm(t.retireConfirm)) return;
     try {
@@ -176,6 +187,7 @@ export function ContractorsView({
         </div>
       </div>
 
+      {/* Slide-over create/edit drawer, dismissed by clicking the backdrop or × */}
       {drawerOpen && (
         <>
           <div className="fixed inset-0 z-10 bg-black/20" onClick={() => setDrawerOpen(false)} />

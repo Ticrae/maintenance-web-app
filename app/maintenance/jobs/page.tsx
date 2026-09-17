@@ -4,6 +4,8 @@ import { DEFAULT_SLA_HOURS } from "@/lib/sla";
 import { redirect } from "next/navigation";
 import { MyJobsView, type MyJobRow } from "./my-jobs-view";
 
+// The worker's own active jobs, with the agency's SLA hours for computing
+// due dates in MyJobsView
 export default async function MyJobsPage() {
   const supabase = await createClient();
   const {

@@ -38,6 +38,8 @@ export type CommentItem = {
 };
 export type PhotoItem = { id: string; url: string; created_at: string };
 
+// Statuses offered in the manual "set status" dropdown ("Waiting for Parts"
+// is reached via the resume/pause flow instead, not this dropdown)
 const STATUS_OPTIONS: RequestStatus[] = [
   "Assigned",
   "In Progress",
@@ -45,6 +47,8 @@ const STATUS_OPTIONS: RequestStatus[] = [
   "Cancelled",
 ];
 
+// Maps each status to the Stepper's highlighted index; Completed/Cancelled
+// both land on the last step since the stepper has no separate "cancelled" state
 const STEP_INDEX: Record<string, number> = {
   Open: 0,
   Assigned: 1,
@@ -53,6 +57,8 @@ const STEP_INDEX: Record<string, number> = {
   Cancelled: 3,
 };
 
+// Full job detail view for a maintenance worker: status controls, progress
+// stepper, description, photo upload, and a comment thread with the home's staff.
 export function JobDetail({
   job,
   activity,
@@ -74,9 +80,13 @@ export function JobDetail({
   const [resolutionNotes, setResolutionNotes] = useState("");
   const [cost, setCost] = useState("");
 
+  // First line of the description is the short title (see submitStaffRequest);
+  // everything after is the fuller detail text
   const [title, ...rest] = job.description.split("\n");
   const details = rest.join("\n");
 
+  // Completing needs the extra notes/cost panel first; every other status
+  // change applies immediately
   async function handleStatusChange(status: RequestStatus) {
     if (status === "Completed") {
       setShowCompletePanel(true);
@@ -93,6 +103,8 @@ export function JobDetail({
     }
   }
 
+  // Completes the job, optionally with resolution notes/cost, then returns
+  // to the completed-jobs list
   async function handleComplete(withNotes: boolean) {
     setBusy(true);
     setError(null);
@@ -109,6 +121,7 @@ export function JobDetail({
     }
   }
 
+  // Posts the comment and clears the textarea on success
   async function handleComment() {
     if (!comment.trim()) return;
     setBusy(true);
@@ -123,6 +136,7 @@ export function JobDetail({
     }
   }
 
+  // Uploads a single photo attachment for this job
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;

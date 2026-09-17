@@ -17,6 +17,7 @@ export type NotifItem = {
   day: string;
 };
 
+// Renders the synthesized notification feed with tag filters and day-grouped sections
 export function NotificationsList({ items, homeName }: { items: NotifItem[]; homeName: string }) {
   const [filter, setFilter] = useState("all");
   const dict = useDictionary();
@@ -36,6 +37,7 @@ export function NotificationsList({ items, homeName }: { items: NotifItem[]; hom
     urgent: items.filter((i) => i.tag === "urgent").length,
   };
 
+  // Filter first, then bucket the remaining items by their day label
   const groups = useMemo(() => {
     const filtered = filter === "all" ? items : items.filter((i) => i.tag === filter);
     const byDay = new Map<string, NotifItem[]>();

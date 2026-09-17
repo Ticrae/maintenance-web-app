@@ -10,6 +10,9 @@ import {
   type PhotoItem,
 } from "./request-detail";
 
+// Loads a single request plus its reporter/assignee names, comment thread,
+// and photos for the staff-facing detail view. 404s if the request doesn't
+// belong to the viewer's own home.
 export default async function StaffRequestDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {

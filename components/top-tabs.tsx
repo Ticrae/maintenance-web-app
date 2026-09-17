@@ -5,6 +5,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Admin top-nav tabs: href + the i18n key used to look up each tab's label
 export const TABS = [
   { href: "/admin/intelligence", key: "intelligence" },
   { href: "/admin/reports", key: "reports" },
@@ -17,6 +18,8 @@ export const TABS = [
   { href: "/admin/settings", key: "settings" },
 ] as const;
 
+// Desktop-only (`md:flex`) horizontal nav bar for the admin area, hidden on
+// mobile in favor of admin-mobile-nav.tsx and hidden entirely when printing.
 export function TopTabs({ active }: { active: string }) {
   const dict = useDictionary();
 

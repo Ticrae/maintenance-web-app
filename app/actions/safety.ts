@@ -25,6 +25,9 @@ export type AttentionItem = {
   flaggedAssets: { id: string; name: string; recentFailures: number; topCategory: string | null }[];
 };
 
+// Builds the "Home Safety" dashboard data: per-home totals (open/overdue/
+// safety-flagged requests, flagged assets) plus the list of homes that need
+// attention, optionally scoped to one agency.
 export async function getHomeSafetySummary(agencyId?: string) {
   const admin = createAdminClient();
 

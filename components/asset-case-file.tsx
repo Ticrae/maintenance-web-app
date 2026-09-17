@@ -9,8 +9,12 @@ import { useDictionary } from "@/lib/i18n/language-provider";
 import type { getAssetCaseFile } from "@/app/actions/assets";
 import type { RequestStatus } from "@/app/actions/requests";
 
+// Must match the window used server-side in getAssetCaseFile's
+// `recentFailures` calculation, since it's only used here for display text.
 const RECENT_FAILURE_WINDOW_DAYS = 90;
 
+// Full detail page for a single asset: replacement warnings, cost/downtime
+// stats, cost-by-year breakdown, and its full maintenance request history.
 export function AssetCaseFile({
   data,
   backHref,
@@ -62,11 +66,13 @@ export function AssetCaseFile({
       </div>
 
       <div className="flex flex-1 flex-col gap-4 bg-canvas p-4 sm:p-7">
+        {/* Flagged when this asset has failed too many times recently */}
         {suggestReplacement && (
           <div className="rounded-md border border-urgent-bd bg-urgent-bg px-4 py-3 text-[13px] leading-[1.5] text-urgent">
             {t.replacementWarning(recentFailures, RECENT_FAILURE_WINDOW_DAYS)}
           </div>
         )}
+        {/* Flagged when repair costs have eaten up too much of the purchase price */}
         {suggestReplacementByCost && repairToPurchaseRatio !== null && (
           <div className="rounded-md border border-urgent-bd bg-urgent-bg px-4 py-3 text-[13px] leading-[1.5] text-urgent">
             {t.costRatioWarning(Math.round(repairToPurchaseRatio * 100))}
@@ -104,6 +110,7 @@ export function AssetCaseFile({
           </div>
         )}
 
+        {/* Every request ever linked to this asset, newest first */}
         <div className="flex flex-col gap-3">
           <Eyebrow>{t.historyTitle}</Eyebrow>
           <div className={tableWrapClass}>

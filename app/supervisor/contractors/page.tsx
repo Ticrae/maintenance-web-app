@@ -6,6 +6,7 @@ import { ContractorsView } from "@/components/contractors-view";
 
 export const dynamic = "force-dynamic";
 
+// Supervisor's own agency's contractor directory, using the shared ContractorsView
 export default async function SupervisorContractorsPage() {
   const supabase = await createClient();
   const {

@@ -5,6 +5,8 @@ import { AssetCaseFile } from "@/components/asset-case-file";
 
 export const dynamic = "force-dynamic";
 
+// Single-asset case file, scoped to the supervisor's own agency (shows "not
+// found" via a null `data` prop if the asset belongs to another agency)
 export default async function SupervisorAssetCaseFilePage({
   params,
 }: {

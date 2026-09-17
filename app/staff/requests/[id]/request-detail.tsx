@@ -32,6 +32,8 @@ export type CommentItem = {
 };
 export type PhotoItem = { id: string; url: string; created_at: string };
 
+// Maps each status to the Stepper's highlighted index; Completed/Cancelled
+// both land on the last step since the stepper has no separate "cancelled" state
 const STEP_INDEX: Record<string, number> = {
   Open: 0,
   Assigned: 1,
@@ -41,6 +43,8 @@ const STEP_INDEX: Record<string, number> = {
   Cancelled: 4,
 };
 
+// Full request detail view for staff: progress stepper, description,
+// photos, and a comment thread (activity feed) with maintenance.
 export function RequestDetail({
   request,
   activity,
@@ -56,6 +60,8 @@ export function RequestDetail({
   const dict = useDictionary();
   const t = dict.staff.requestDetail;
 
+  // First line of the description is the short title (see submitStaffRequest);
+  // everything after is the fuller detail text
   const [title, ...rest] = request.description.split("\n");
   const details = rest.join("\n");
 
@@ -63,6 +69,7 @@ export function RequestDetail({
     dict.common.status[request.status as keyof typeof dict.common.status] ??
     request.status;
 
+  // Posts the comment and clears the textarea on success
   async function handleComment() {
     if (!comment.trim()) return;
     setBusy(true);

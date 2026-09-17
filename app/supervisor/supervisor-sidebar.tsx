@@ -12,6 +12,8 @@ import { SupervisorMobileNav } from "./supervisor-mobile-nav";
 import { SignOutButton } from "@/components/sign-out-button";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Supervisor (agency admin) desktop sidebar; the same `navItems` list also
+// feeds the mobile slide-over menu (SupervisorMobileNav) so both stay in sync.
 export function SupervisorSidebar({
   openCount,
   name,

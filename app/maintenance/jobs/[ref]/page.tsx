@@ -8,6 +8,10 @@ import {
   type PhotoItem,
 } from "./job-detail";
 
+// Loads a single job plus its reporter name, comment thread, and photos for
+// the maintenance-worker-facing detail view (not scoped to the current
+// worker — any job's ref is viewable/editable through the actions it calls,
+// which enforce their own assignment checks).
 export default async function JobDetailPage(
   props: PageProps<"/maintenance/jobs/[ref]">,
 ) {

@@ -8,6 +8,8 @@ import { signOut } from "@/app/actions/auth";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Reads the enclosing <form>'s pending state via useFormStatus to show a
+// "signing out…" label while the sign-out server action runs
 function SignOutRow() {
   const { pending } = useFormStatus();
   const dict = useDictionary();
@@ -22,6 +24,8 @@ function SignOutRow() {
   );
 }
 
+// Mobile-only top bar + slide-over menu, the small-screen replacement for
+// TopTabs (which is desktop-only)
 export function AdminMobileNav({ active }: { active: string }) {
   const [open, setOpen] = useState(false);
   const dict = useDictionary();

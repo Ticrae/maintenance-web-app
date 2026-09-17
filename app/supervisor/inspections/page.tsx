@@ -9,6 +9,9 @@ const FALLBACK_CATEGORIES = ["Plumbing", "Electrical", "HVAC", "Appliance", "Str
 
 export const dynamic = "force-dynamic";
 
+// Unlike staff/maintenance, supervisor also gets checklist-authoring
+// (InspectionManager), so this loads both run data and template data and
+// hands off to a shell that tabs between the two.
 export default async function SupervisorInspectionsPage() {
   const dict = await getServerDictionary();
   const supabase = await createClient();

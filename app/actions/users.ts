@@ -21,6 +21,7 @@ async function currentOrigin() {
 
 export type UserFormState = { error?: string } | undefined;
 
+// Parses the shared invite/edit form fields, validating the role
 function readProfileFields(formData: FormData) {
   const role = formData.get("role");
   if (!isRole(role)) return { error: "Choose a valid role." } as const;
@@ -38,6 +39,9 @@ function readProfileFields(formData: FormData) {
   };
 }
 
+// Invites a new user by email and fills in their profile fields. Rolls back
+// the created auth user if writing the profile fails, so a failed invite
+// doesn't leave a half-created account behind.
 export async function inviteUser(_: UserFormState, formData: FormData): Promise<UserFormState> {
   await requireSuperAdmin();
 
@@ -70,6 +74,7 @@ export async function inviteUser(_: UserFormState, formData: FormData): Promise<
   return {};
 }
 
+// Updates an existing user's profile fields
 export async function updateUser(
   userId: string,
   _: UserFormState,
@@ -88,6 +93,7 @@ export async function updateUser(
   return {};
 }
 
+// Quick role-only change, used by the inline role dropdown in the users table
 export async function updateUserRole(userId: string, role: string) {
   await requireSuperAdmin();
   if (!isRole(role)) throw new Error("Invalid role");
@@ -99,6 +105,8 @@ export async function updateUserRole(userId: string, role: string) {
   revalidatePath("/admin/users");
 }
 
+// Permanently deletes a user's auth account; guards against a super admin
+// accidentally locking themselves out by deleting their own account.
 export async function deleteUser(userId: string) {
   const currentUser = await requireSuperAdmin();
   if (userId === currentUser.id) throw new Error("You can't delete your own account.");

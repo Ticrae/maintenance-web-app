@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireSuperAdmin } from "@/lib/supabase/require-admin";
 
+// Creates a home, optionally attached to an agency at creation time
 export async function createHome(input: {
     name: string;
     address: string;
@@ -31,6 +32,7 @@ export async function createHome(input: {
     return data;
 }
 
+// Creates a new agency
 export async function createAgency(input: {
     name: string;
 }) {
@@ -54,6 +56,8 @@ export async function createAgency(input: {
     return data;
 }
 
+// Lists every home platform-wide, newest first. Returns [] on failure rather
+// than throwing, since this feeds read-only dropdowns/lists.
 export async function getHomes() {
     const admin = createAdminClient();
 
@@ -70,6 +74,8 @@ export async function getHomes() {
     return homes || [];
 }
 
+// Lists every agency, newest first. Returns [] on failure rather than
+// throwing, since this feeds read-only dropdowns/lists.
 export async function getAgencies() {
     const admin = createAdminClient();
 

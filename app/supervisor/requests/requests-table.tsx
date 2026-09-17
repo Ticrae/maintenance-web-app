@@ -30,6 +30,7 @@ export type RequestRow = {
 
 export type Assignee = { id: string; first_name: string | null; last_name: string | null };
 
+// Filter option lists for the status/priority chip rows
 const STATUSES: (RequestStatus | "All")[] = [
   "All",
   "Open",
@@ -40,12 +41,17 @@ const STATUSES: (RequestStatus | "All")[] = [
   "Cancelled",
 ];
 const PRIORITIES: (Priority | "All")[] = ["All", "Urgent", "High", "Medium", "Low"];
+// Shared grid-template-columns for both the header row and each data row, so
+// their columns always line up
 const GRID_COLS = "grid-cols-[84px_minmax(220px,1fr)_140px_110px_90px_100px_160px_130px]";
 
 function assigneeName(a: Assignee, dict: Dictionary) {
   return [a.first_name, a.last_name].filter(Boolean).join(" ") || dict.common.unnamed;
 }
 
+// Agency-wide requests table: status/priority filters, an assignee dropdown
+// per row (updates via a transition so the UI doesn't block), and a link
+// into the contractor-assignment drawer for each request.
 export function SupervisorRequestsTable({
   requests,
   profileMap,
@@ -87,6 +93,8 @@ export function SupervisorRequestsTable({
   ).length;
   const unassigned = requests.filter((r) => !r.assigned_to).length;
 
+  // Assigns/unassigns a request via the row's dropdown; wrapped in a
+  // transition so the Select stays responsive while it's in flight
   function handleAssign(requestId: string, userId: string | null) {
     setError(null);
     startTransition(async () => {

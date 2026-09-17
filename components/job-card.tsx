@@ -5,6 +5,9 @@ import { PRIORITY, type Priority } from "@/lib/theme";
 import { UrgentTag } from "@/components/ui/badges";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Shared row layout for a maintenance job/request across the queue, my-jobs,
+// and completed-jobs list views — a priority color bar, ref/priority, title,
+// a caller-supplied `right` slot (e.g. status or home), and `actions` (e.g. Accept button).
 export function JobCard({
   ref: jobRef,
   priority,
@@ -48,6 +51,8 @@ export function JobCard({
   );
 }
 
+// "Open <ref>" link used as the action slot on job cards that just navigate
+// to the detail page rather than exposing an inline action
 export function JobCardLink({ href, refLabel }: { href: string; refLabel: string }) {
   const dict = useDictionary();
   return (

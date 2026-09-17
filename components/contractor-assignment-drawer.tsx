@@ -17,6 +17,9 @@ import { useDictionary } from "@/lib/i18n/language-provider";
 const STATUSES: AssignmentStatus[] = ["awaiting", "scheduled", "completed", "cancelled"];
 const INVOICE_STATUSES: InvoiceStatus[] = ["pending", "received", "paid"];
 
+// Slide-over drawer for managing a request's contractor assignment(s): shows
+// the current assignment (editable inline), a "new assignment" form when
+// there isn't one yet or the user chooses to reassign, and past assignment history.
 export function ContractorAssignmentDrawer({
   requestId,
   contractors,
@@ -48,9 +51,12 @@ export function ContractorAssignmentDrawer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestId]);
 
+  // Assignments come back most-recent-first: the newest is the active one,
+  // everything else is history.
   const current = assignments?.[0] ?? null;
   const history = assignments?.slice(1) ?? [];
 
+  // Creates a new contractor assignment for this request and resets the form
   async function handleAssign(e: React.FormEvent) {
     e.preventDefault();
     if (!contractorId) return;
@@ -75,6 +81,8 @@ export function ContractorAssignmentDrawer({
     }
   }
 
+  // Patches a field on the current assignment (status, appointment, quote,
+  // invoice status) — called from each control's onChange/onBlur below
   async function handleUpdate(id: string, patch: Parameters<typeof updateAssignment>[1]) {
     setPending(true);
     setError(null);
@@ -109,6 +117,7 @@ export function ContractorAssignmentDrawer({
           {assignments === null ? (
             <p className="text-sm text-meta">…</p>
           ) : current && !showNew ? (
+            // Current assignment: editable inline via onChange/onBlur, each firing handleUpdate
             <div className="flex flex-col gap-3 rounded-lg border border-black/[.09] p-4">
               <div className="flex items-center justify-between">
                 <span className="text-[13.5px] font-semibold text-ink">
@@ -187,6 +196,8 @@ export function ContractorAssignmentDrawer({
             </div>
           ) : null}
 
+          {/* New-assignment form: shown when explicitly reassigning, or by
+              default when there's no assignment yet */}
           {(showNew || !current) && assignments !== null && (
             <form onSubmit={handleAssign} className="flex flex-col gap-4 rounded-lg border border-black/[.09] p-4">
               <span className="text-[13px] font-semibold text-ink">{t.newAssignmentTitle}</span>
@@ -232,6 +243,7 @@ export function ContractorAssignmentDrawer({
             </form>
           )}
 
+          {/* Previous (superseded) assignments for this request */}
           {history.length > 0 && (
             <div className="flex flex-col gap-2">
               <span className="text-[12px] font-semibold uppercase tracking-[.06em] text-eyebrow">{t.historyTitle}</span>

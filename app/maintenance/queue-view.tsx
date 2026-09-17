@@ -25,6 +25,8 @@ export type QueueRow = {
 
 const PRIORITIES: Priority[] = ["Urgent", "High", "Medium", "Low"];
 
+// Job queue with sidebar checkbox filters (priority + home); unassigned jobs
+// get an "Accept" button, already-assigned ones link to their detail page instead.
 export function QueueView({ queue, homes }: { queue: QueueRow[]; homes: { id: string; name: string }[] }) {
   const dict = useDictionary();
   const t = dict.maintenance.queue;
@@ -33,6 +35,7 @@ export function QueueView({ queue, homes }: { queue: QueueRow[]; homes: { id: st
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Generic add/remove toggle used by both the priority and home checkbox filters
   function toggle<T>(set: Set<T>, value: T, setter: (s: Set<T>) => void) {
     const next = new Set(set);
     if (next.has(value)) next.delete(value);
@@ -52,6 +55,7 @@ export function QueueView({ queue, homes }: { queue: QueueRow[]; homes: { id: st
 
   const activeCount = (priorityFilter.size ? 1 : 0) + (homeFilter.size ? 1 : 0);
 
+  // Claims a job; acceptRequest throws if another worker already took it
   async function handleAccept(id: string) {
     setError(null);
     setPendingId(id);

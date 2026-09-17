@@ -47,6 +47,7 @@ export type Assignee = {
   home_id: string | null;
 };
 
+// Filter/dropdown option lists
 const STATUSES: RequestStatus[] = [
   "Open",
   "Assigned",
@@ -56,6 +57,8 @@ const STATUSES: RequestStatus[] = [
   "Cancelled",
 ];
 const PRIORITIES: Priority[] = ["Urgent", "High", "Medium", "Low"];
+// Shared grid-template-columns for both the header row and each data row, so
+// their columns always line up
 const GRID_COLS =
   "grid-cols-[84px_minmax(220px,1fr)_140px_110px_90px_140px_160px_130px_100px]";
 
@@ -63,6 +66,9 @@ function assigneeName(a: Assignee, dict: Dictionary) {
   return [a.first_name, a.last_name].filter(Boolean).join(" ") || dict.common.unnamed;
 }
 
+// Platform-wide requests table: status/priority filters, inline status and
+// assignee dropdowns per row (both updated via a transition so the UI
+// doesn't block), and a link into the contractor-assignment drawer.
 export function RequestsTable({
   requests,
   profileMap,
@@ -181,6 +187,7 @@ export function RequestsTable({
             <span>{dict.common.table.created}</span>
           </div>
           {filtered.map((r) => {
+            // Only offer assignees from the same agency as the request
             const eligible = assignees.filter(
               (a) => a.agency_id === r.agency_id,
             );

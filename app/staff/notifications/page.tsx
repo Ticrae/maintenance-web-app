@@ -6,6 +6,7 @@ import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { redirect } from "next/navigation";
 import { NotificationsList, type NotifItem } from "./notifications-list";
 
+// Groups notifications under "Today"/"Yesterday"/a short date, localized
 function dayLabel(date: Date, dict: Dictionary, locale: string) {
   const today = new Date();
   const yesterday = new Date(today.getTime() - 86400_000);
@@ -17,10 +18,15 @@ function dayLabel(date: Date, dict: Dictionary, locale: string) {
   });
 }
 
+// The description's first line is its short title (see submitStaffRequest)
 function firstLine(text: string) {
   return text.split("\n")[0];
 }
 
+// Synthesizes a notification feed for the staff member's home: new comments
+// and status changes on their home's requests, merged and sorted by
+// recency. There's no dedicated notifications table — this derives the feed
+// from request/comment activity each time the page loads.
 export default async function NotificationsPage() {
   const dict = await getServerDictionary();
   const locale = await getServerLocale();
@@ -80,6 +86,7 @@ export default async function NotificationsPage() {
 
   const items: NotifItem[] = [];
 
+  // One notification per comment on any of this home's requests
   for (const c of comments ?? []) {
     const request = requestById[c.request_id];
     if (!request) continue;
@@ -95,6 +102,8 @@ export default async function NotificationsPage() {
     });
   }
 
+  // Plus one per request that has moved past "Open" (skip Open itself since
+  // that's just the initial state, not a change worth notifying about)
   for (const r of rows) {
     if (r.status === "Open") continue;
     const statusLabel =

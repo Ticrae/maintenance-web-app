@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   description: "Maintenance requests across homes.",
 };
 
+// App-wide root layout: sets the <html> lang from the server-resolved
+// locale cookie and wraps everything in the client-side LanguageProvider so
+// the initial render and subsequent client updates agree on locale.
 export default async function RootLayout({
   children,
 }: Readonly<{

@@ -8,6 +8,8 @@ export type AuthedProfile = {
   home_id: string | null;
 };
 
+// Loads the current logged-in user's profile and throws unless their role is
+// in the allowed list — used to guard server actions/pages by role.
 export async function requireRole(allowed: Role[]): Promise<AuthedProfile> {
   const supabase = await createClient();
   const {
@@ -31,6 +33,7 @@ export async function requireRole(allowed: Role[]): Promise<AuthedProfile> {
   };
 }
 
+// Shorthand guard for super-admin-only server actions/pages
 export async function requireSuperAdmin() {
   return requireRole(["super_admin"]);
 }

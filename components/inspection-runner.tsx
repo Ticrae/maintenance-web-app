@@ -23,6 +23,9 @@ import type { Priority } from "@/lib/theme";
 
 const PRIORITIES: Priority[] = ["Low", "Medium", "High", "Urgent"];
 
+// Staff/maintenance/supervisor-facing inspection UI: pick a checklist +
+// home and start a run, or resume the active run (RunScreen) once started.
+// Shows past run history when not mid-run.
 export function InspectionRunner({
   title,
   headerActions,
@@ -53,6 +56,7 @@ export function InspectionRunner({
   const [run, setRun] = useState<RunDetail | null>(null);
   const [finished, setFinished] = useState(false);
 
+  // Loads the started run's full detail once `runId` is set
   useEffect(() => {
     if (!runId) return;
     let cancelled = false;
@@ -64,6 +68,7 @@ export function InspectionRunner({
     };
   }, [runId]);
 
+  // Starts a new inspection run, switching the view into RunScreen
   async function handleStart(e: React.FormEvent) {
     e.preventDefault();
     if (!templateId || !homeId) return;
@@ -79,11 +84,13 @@ export function InspectionRunner({
     }
   }
 
+  // Re-fetches the run after an item result is recorded
   function refreshRun() {
     if (!runId) return;
     getRun(runId).then(setRun);
   }
 
+  // Marks the run complete and refreshes the history list to include it
   async function handleFinish() {
     if (!runId) return;
     try {
@@ -96,12 +103,14 @@ export function InspectionRunner({
     }
   }
 
+  // Resets local state back to the "start an inspection" screen
   function backToStart() {
     setRunId(null);
     setRun(null);
     setFinished(false);
   }
 
+  // Mid-run: hand off entirely to the run screen
   if (runId) {
     return (
       <RunScreen
@@ -118,6 +127,7 @@ export function InspectionRunner({
     <div className="flex flex-1 flex-col overflow-auto">
       <PageHeader title={title} actions={headerActions} />
 
+      {/* Completion screen, replacing the start form once a run finishes */}
       {finished ? (
         <div className="mx-auto flex max-w-[480px] flex-col items-center gap-4 py-16 text-center">
           <span className="text-3xl" aria-hidden>
@@ -228,6 +238,8 @@ export function InspectionRunner({
   );
 }
 
+// Active-run screen: checklist items grouped by section, with a progress
+// counter and a "finish" button enabled only once every item is answered.
 function RunScreen({
   run,
   categories,
@@ -307,6 +319,8 @@ function RunScreen({
   );
 }
 
+// Groups checklist items by their section, preserving each item's order and
+// putting section-less items first (mirrors the grouping in inspection-manager.tsx)
 function useMemoSections(items: ItemRow[]) {
   return useMemo(() => {
     const groups = new Map<string, ItemRow[]>();
@@ -319,6 +333,9 @@ function useMemoSections(items: ItemRow[]) {
   }, [items]);
 }
 
+// A single checklist item during a run: pass/fail buttons, and when marked
+// failing, an expanded form to add notes and optionally raise a maintenance
+// request straight from the failure.
 function ChecklistItem({
   item,
   runId,
@@ -346,6 +363,7 @@ function ChecklistItem({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Records a passing result for this item
   async function markPass() {
     setBusy(true);
     setError(null);
@@ -360,6 +378,7 @@ function ChecklistItem({
     }
   }
 
+  // Records a failing result with notes, without raising a maintenance request
   async function saveFailOnly() {
     setBusy(true);
     setError(null);
@@ -373,6 +392,7 @@ function ChecklistItem({
     }
   }
 
+  // Records the failure and creates a linked maintenance request in one step
   async function createRequest() {
     if (!notes.trim()) {
       setError(t.notesRequiredError);

@@ -8,6 +8,9 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { getServerDictionary } from "@/lib/i18n/server";
 import { redirect } from "next/navigation";
 
+// Shared shell for every /staff page: loads the current user's profile and
+// home, computes the request-count/recent-activity badges shown in the
+// sidebar/mobile nav, and renders the sidebar around the page content.
 export default async function StaffLayout({
   children,
 }: {
@@ -49,6 +52,7 @@ export default async function StaffLayout({
   ).length;
   const completedCount = rows.filter((r) => r.status === "Completed").length;
 
+  // "Recent activity" badge: comments posted on this home's requests in the last 24h
   const dayAgo = new Date(nowMs() - 24 * 3600_000).toISOString();
   const requestIds = rows.map((r) => r.id);
   const { count: recentComments } = requestIds.length

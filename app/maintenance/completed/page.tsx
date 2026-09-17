@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { CompletedView, type CompletedRow } from "./completed-view";
 
+// The worker's own completed jobs, with each one's photo count attached (for
+// the "missing evidence" flag) and the agency's homes for the sidebar filter.
 export default async function CompletedPage() {
   const supabase = await createClient();
   const {

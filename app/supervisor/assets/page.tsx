@@ -7,6 +7,8 @@ import { AssetsView } from "@/components/assets-view";
 
 export const dynamic = "force-dynamic";
 
+// Supervisor's own agency's assets: loads the shared AssetsView with data
+// scoped to this agency and pointed at the supervisor asset-detail route.
 export default async function SupervisorAssetsPage() {
   const supabase = await createClient();
   const {

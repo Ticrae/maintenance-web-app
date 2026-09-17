@@ -10,6 +10,8 @@ export type StepAction = "continue" | "create_request" | "finish" | "stop";
 
 const SETTINGS_PATH = "/admin/settings";
 
+// Swaps a raw foreign-key-violation error (23503) for a friendlier message;
+// passes through any other error's message unchanged
 function friendlyError(error: { code?: string; message: string }, fallback: string) {
   if (error.code === "23503") return fallback;
   return error.message;
@@ -17,6 +19,7 @@ function friendlyError(error: { code?: string; message: string }, fallback: stri
 
 // --- Asset types ---------------------------------------------------------
 
+// Lists every asset type platform-wide (asset types aren't agency-scoped)
 export async function getAssetTypes() {
   const admin = createAdminClient();
   const { data, error } = await admin.from("asset_types").select("*").order("name");
@@ -27,6 +30,7 @@ export async function getAssetTypes() {
   return data ?? [];
 }
 
+// Creates a new asset type; super-admin only
 export async function createAssetType(input: { name: string; description?: string }) {
   await requireSuperAdmin();
   const admin = createAdminClient();
@@ -43,6 +47,7 @@ export async function createAssetType(input: { name: string; description?: strin
   return data;
 }
 
+// Updates an asset type's name/description
 export async function updateAssetType(id: string, input: { name: string; description?: string }) {
   await requireSuperAdmin();
   const admin = createAdminClient();
@@ -61,6 +66,8 @@ export async function updateAssetType(id: string, input: { name: string; descrip
   revalidatePath(SETTINGS_PATH);
 }
 
+// Deletes an asset type; the DB's foreign-key constraint blocks this while
+// any guide or asset still references it, surfaced here as a friendly error
 export async function deleteAssetType(id: string) {
   await requireSuperAdmin();
   const admin = createAdminClient();
@@ -92,6 +99,8 @@ export type GuideListRow = {
   agencies: { name: string } | null;
 };
 
+// Lists every troubleshooting guide platform-wide (with step counts), for
+// the admin authoring list
 export async function getGuides(): Promise<(GuideListRow & { stepCount: number })[]> {
   const admin = createAdminClient();
   const { data, error } = await admin
@@ -122,6 +131,7 @@ export async function getGuides(): Promise<(GuideListRow & { stepCount: number }
   return guides.map((g) => ({ ...g, stepCount: counts[g.id] ?? 0 }));
 }
 
+// Creates a new troubleshooting guide, starting out as a draft with no steps yet
 export async function createGuide(input: {
   agency_id: string;
   asset_type_id: string;
@@ -152,6 +162,7 @@ export async function createGuide(input: {
   return data;
 }
 
+// Updates a guide's metadata (title/problem/description/status/asset type/agency)
 export async function updateGuideMeta(
   id: string,
   input: {
@@ -184,6 +195,8 @@ export async function updateGuideMeta(
   revalidatePath(SETTINGS_PATH);
 }
 
+// Deletes a guide along with all of its steps and their options (no FK
+// cascade in the schema, so each layer is cleaned up manually here)
 export async function deleteGuide(id: string) {
   await requireSuperAdmin();
   const admin = createAdminClient();
@@ -226,6 +239,8 @@ export type StepRow = {
 
 export type GuideDetail = GuideListRow & { steps: StepRow[] };
 
+// Loads a guide with its steps and each step's options, for the admin
+// guide-detail authoring panel
 export async function getGuideDetail(id: string): Promise<GuideDetail | null> {
   const admin = createAdminClient();
 
@@ -268,6 +283,7 @@ export async function getGuideDetail(id: string): Promise<GuideDetail | null> {
 
 // --- Steps -------------------------------------------------------------
 
+// Appends a new step to a guide, placed after the current last step
 export async function createStep(input: {
   guide_id: string;
   title: string;
@@ -303,6 +319,7 @@ export async function createStep(input: {
   revalidatePath(SETTINGS_PATH);
 }
 
+// Updates a step's content fields
 export async function updateStep(
   id: string,
   input: {
@@ -332,6 +349,9 @@ export async function updateStep(
   revalidatePath(SETTINGS_PATH);
 }
 
+// Deletes a step: removes its own options, clears any other step's option
+// that pointed at it (so branching never dangles), then closes the gap in
+// step_number left behind by decrementing every later step.
 export async function deleteStep(id: string, guide_id: string) {
   await requireSuperAdmin();
   const admin = createAdminClient();
@@ -367,6 +387,7 @@ export async function deleteStep(id: string, guide_id: string) {
   revalidatePath(SETTINGS_PATH);
 }
 
+// Reorders a step by swapping step_number with its immediate neighbor
 export async function moveStep(id: string, guide_id: string, direction: "up" | "down") {
   await requireSuperAdmin();
   const admin = createAdminClient();
@@ -395,6 +416,8 @@ export async function moveStep(id: string, guide_id: string, direction: "up" | "
 
 // --- Options -------------------------------------------------------------
 
+// Adds a branching option to a step. next_step_id only makes sense for the
+// "continue" action, so it's dropped for any other action.
 export async function createOption(input: {
   step_id: string;
   label: string;
@@ -416,6 +439,7 @@ export async function createOption(input: {
   revalidatePath(SETTINGS_PATH);
 }
 
+// Updates an option's label/target step/action
 export async function updateOption(
   id: string,
   input: { label: string; next_step_id?: string | null; action: StepAction }
@@ -437,6 +461,7 @@ export async function updateOption(
   revalidatePath(SETTINGS_PATH);
 }
 
+// Removes a single branching option from a step
 export async function deleteOption(id: string) {
   await requireSuperAdmin();
   const admin = createAdminClient();
@@ -487,6 +512,8 @@ export type StaffGuideRunner = {
   steps: RunnerStep[];
 };
 
+// Published guides for the staff member's own agency, filtered to ones that
+// actually have steps (an empty guide can't be walked)
 export async function getStaffGuides(): Promise<StaffGuideListItem[]> {
   const profile = await requireRole(["staff"]);
   if (!profile.agency_id) return [];
@@ -533,6 +560,9 @@ export async function getStaffGuides(): Promise<StaffGuideListItem[]> {
     }));
 }
 
+// Loads a single guide's full step/option tree for the staff-facing runner
+// UI; returns null unless the guide is published and in the caller's own
+// agency, so staff can't walk drafts or another agency's guides.
 export async function getStaffGuideRunner(guideId: string): Promise<StaffGuideRunner | null> {
   const profile = await requireRole(["staff"]);
   if (!profile.agency_id) return null;

@@ -25,11 +25,16 @@ type Namespace = "admin" | "supervisor";
 
 const STATUSES: TemplateStatus[] = ["draft", "published", "archived"];
 
+// Picks the right role-scoped translation namespace, since admin and
+// supervisor share this authoring UI but have separate dictionary entries.
 function useInspectionsDict(namespace: Namespace) {
   const dict = useDictionary();
   return namespace === "admin" ? dict.admin.inspections : dict.supervisor.inspections;
 }
 
+// Checklist-authoring tool shared by admin and supervisor: a searchable
+// template list on the left, and the selected template's editable detail
+// (metadata + items) on the right.
 export function InspectionManager({
   agencies,
   templates: initialTemplates,
@@ -54,6 +59,9 @@ export function InspectionManager({
     return templates.filter((tpl) => tpl.name.toLowerCase().includes(q));
   }, [templates, search]);
 
+  // Loads the selected template's full detail (items included) whenever the
+  // selection changes; `cancelled` guards against a stale response landing
+  // after the user has since picked a different template.
   useEffect(() => {
     if (!selectedId) return;
     let cancelled = false;
@@ -65,9 +73,11 @@ export function InspectionManager({
     };
   }, [selectedId]);
 
+  // Guard against rendering stale detail for a template that's no longer selected
   const activeDetail = selectedId && detail?.id === selectedId ? detail : null;
   const detailLoading = !!selectedId && !activeDetail;
 
+  // Re-fetches the current template's detail after an edit (item add/edit/move/delete)
   function refreshDetail() {
     if (!selectedId) return;
     getTemplateDetail(selectedId).then(setDetail);
@@ -175,6 +185,8 @@ export function InspectionManager({
   );
 }
 
+// Right-hand panel: editable template metadata (name/agency/status/
+// description) plus its items grouped by section, with an add-item form.
 function TemplateDetailPanel({
   template,
   agencies,
@@ -204,6 +216,7 @@ function TemplateDetailPanel({
   const [itemLabel, setItemLabel] = useState("");
   const [itemSection, setItemSection] = useState("");
 
+  // Persists the template's editable metadata fields
   async function handleSaveMeta(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !agencyId) return;
@@ -224,6 +237,7 @@ function TemplateDetailPanel({
     }
   }
 
+  // Appends a new checklist item to this template
   async function handleAddItem(e: React.FormEvent) {
     e.preventDefault();
     if (!itemLabel.trim()) return;
@@ -359,6 +373,8 @@ function TemplateDetailPanel({
   );
 }
 
+// A single checklist item row: view mode with hover-revealed
+// move/edit/delete controls, or an inline edit form when `editing`.
 function ItemRow2({
   item,
   isFirst,
@@ -402,6 +418,7 @@ function ItemRow2({
     }
   }
 
+  // Swaps this item's sort order with its neighbor in the given direction
   async function handleMove(direction: "up" | "down") {
     try {
       await moveItem(item.id, templateId, direction);
@@ -447,6 +464,7 @@ function ItemRow2({
   );
 }
 
+// Slide-over drawer for creating a brand-new checklist template
 function NewTemplateDrawer({
   agencies,
   namespace,

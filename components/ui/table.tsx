@@ -1,3 +1,6 @@
+// Shared className building blocks for the app's CSS-grid-based data tables
+// (grid columns are defined per-table via inline style, these just handle
+// borders/spacing/typography consistently across them).
 export const tableWrapClass =
   "overflow-x-auto rounded-lg border border-black/[.09] bg-surface";
 

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Sets a new password after following a password-reset email link (which
+// already established a recovery session server-side via /auth/confirm)
 export default function ResetPasswordPage() {
   const router = useRouter();
 

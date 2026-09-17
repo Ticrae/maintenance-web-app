@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Requests a password-reset email; swaps to a "check your email" confirmation
+// screen on success rather than navigating away, since Supabase doesn't
+// reveal whether the address actually has an account.
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [email, setEmail] = useState("");

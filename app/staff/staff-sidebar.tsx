@@ -16,6 +16,9 @@ import { useDictionary } from "@/lib/i18n/language-provider";
 
 export type StaffStatusFilter = "open" | "in-progress" | "completed";
 
+// Staff desktop sidebar + mobile tab bar: nav links, status-filter shortcuts
+// (applied via the `?status=` query param on the requests list), and the
+// signed-in user footer.
 export function StaffSidebar({
   totalRequests,
   openCount,
@@ -40,6 +43,7 @@ export function StaffSidebar({
   const dict = useDictionary();
   const t = dict.staff.nav;
 
+  // Status filter only applies on the requests list itself, not other staff pages
   const activeStatus =
     pathname === "/staff" ? searchParams.get("status") : null;
 

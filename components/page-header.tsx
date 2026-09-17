@@ -1,3 +1,5 @@
+// Shared sticky page-top header: title/subtitle on the left, arbitrary
+// action buttons on the right, used across every role's top-level pages.
 export function PageHeader({
   title,
   subtitle,

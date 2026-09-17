@@ -9,6 +9,9 @@ const FALLBACK_CATEGORIES = ["Plumbing", "Electrical", "HVAC", "Appliance", "Str
 
 export const dynamic = "force-dynamic";
 
+// Maintenance-worker-facing inspections page: loads checklists runnable at
+// their agency's homes plus their own run history, and hands off to the
+// shared InspectionRunner component.
 export default async function MaintenanceInspectionsPage() {
   const dict = await getServerDictionary();
   const supabase = await createClient();

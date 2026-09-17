@@ -5,6 +5,9 @@ import { getServerDictionary } from "@/lib/i18n/server";
 import { redirect } from "next/navigation";
 import { MyRequestsTable, type StaffRequestRow } from "./requests-table";
 
+// Staff member's own requests list: loads their home's requests, attaches
+// each one's photo count, and computes the average response time across
+// completed requests for the stats row.
 export default async function MyRequestsPage({
   searchParams,
 }: {
@@ -59,6 +62,7 @@ export default async function MyRequestsPage({
     photoCount: photoCounts[r.id] ?? 0,
   }));
 
+  // Average time-to-resolution across completed requests, for the stats row
   const completed = rows.filter((r) => r.status === "Completed");
   const avgResponseMs =
     completed.length > 0

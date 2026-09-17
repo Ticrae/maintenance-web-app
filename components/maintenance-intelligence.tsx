@@ -6,6 +6,8 @@ import { Eyebrow } from "@/components/ui/misc";
 import { useDictionary } from "@/lib/i18n/language-provider";
 import type { getMaintenanceIntelligence } from "@/app/actions/intelligence";
 
+// Shared card wrapper for each intelligence panel below, with an icon +
+// colored heading matching its severity `tone`.
 function Section({
   icon,
   title,
@@ -31,6 +33,9 @@ function Section({
   );
 }
 
+// "What should I worry about?" insights page shared by supervisor/admin:
+// urgent requests, recurring asset failures, stale inspections, cost and
+// trend callouts. Renders an all-clear message when nothing is notable.
 export function MaintenanceIntelligence({
   title,
   data,
@@ -59,6 +64,7 @@ export function MaintenanceIntelligence({
           <div className="rounded-lg border border-black/[.09] bg-surface p-8 text-center text-sm text-meta">{t.allClear}</div>
         )}
 
+        {/* Urgent/critical open requests needing immediate action */}
         {immediateAttention.length > 0 && (
           <Section icon="🔴" title={t.immediateAttention} tone="urgent">
             <div className="flex flex-col gap-2">
@@ -72,6 +78,7 @@ export function MaintenanceIntelligence({
           </Section>
         )}
 
+        {/* Assets that have failed repeatedly within the tracked window */}
         {recurring.flaggedAssets.length > 0 && (
           <Section icon="🟠" title={t.recurringProblems} tone="high">
             <div className="flex flex-col gap-2">
@@ -94,6 +101,7 @@ export function MaintenanceIntelligence({
           </Section>
         )}
 
+        {/* Inspections started but left incomplete for too long */}
         {staleInspections.length > 0 && (
           <Section icon="🟡" title={t.incompleteInspections} tone="high">
             <div className="flex flex-col gap-2">
@@ -106,6 +114,7 @@ export function MaintenanceIntelligence({
           </Section>
         )}
 
+        {/* Total repair spend + which assets are driving it */}
         {costInsight && (
           <Section icon="💰" title={t.costInsight} tone="ink">
             <p className="text-[13px] text-body">{t.totalCostLine(costInsight.totalCost)}</p>
@@ -124,6 +133,7 @@ export function MaintenanceIntelligence({
           </Section>
         )}
 
+        {/* A request category rising sharply over the last 30 days */}
         {emergingTrend && (
           <Section icon="📈" title={t.emergingTrend} tone="ink">
             <p className="text-[13px] text-body">

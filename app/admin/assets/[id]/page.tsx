@@ -3,6 +3,7 @@ import { AssetCaseFile } from "@/components/asset-case-file";
 
 export const dynamic = "force-dynamic";
 
+// Single-asset case file, unscoped by agency (admin can view any asset)
 export default async function AdminAssetCaseFilePage({
   params,
 }: {

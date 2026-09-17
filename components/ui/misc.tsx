@@ -2,6 +2,7 @@
 
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Small uppercase mono-font label used above section headings/stat tiles
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <span className="font-mono text-[10px] font-semibold uppercase tracking-[.1em] text-eyebrow">
@@ -10,6 +11,7 @@ export function Eyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Circular avatar showing a person's initials, in one of two fixed sizes
 export function Avatar({
   initials,
   size = 28,
@@ -31,6 +33,7 @@ export function Avatar({
   );
 }
 
+// Dashboard stat card: a label, a big value, and optional supporting context text
 export function StatTile({
   label,
   value,
@@ -61,6 +64,7 @@ export function StatTile({
   );
 }
 
+// Diagonal-striped placeholder box shown where a real photo isn't available
 export function PhotoPlaceholder({
   caption,
   className = "",
@@ -81,6 +85,8 @@ export function PhotoPlaceholder({
   );
 }
 
+// Dashed-border "add a photo" tile; falls back to translated default
+// label/hint text when none is passed in.
 export function AddPhotoTile({
   label,
   hint,
@@ -101,6 +107,9 @@ export function AddPhotoTile({
   );
 }
 
+// Horizontal 4-step progress bar (reported → accepted → on site →
+// completed) used on request/job detail pages; steps up to and including
+// `activeIndex` are highlighted.
 export function Stepper({ activeIndex }: { activeIndex: number }) {
   const dict = useDictionary();
   const steps = [

@@ -5,6 +5,8 @@ import { AssetsView } from "@/components/assets-view";
 
 export const dynamic = "force-dynamic";
 
+// Platform-wide asset directory, using the shared AssetsView (unscoped —
+// unlike the supervisor version, which filters to one agency)
 export default async function AdminAssetsPage() {
   const [assets, assetTypes, homes] = await Promise.all([
     getAssets(),

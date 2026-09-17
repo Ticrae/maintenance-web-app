@@ -7,8 +7,12 @@ import { ReportsView, type UnassignedRow, type Assignee } from "./reports-view";
 
 export const dynamic = "force-dynamic";
 
+// Statuses counted as "open" for the openOver7Days stat (note: this
+// deliberately excludes "Waiting for Parts", unlike other ACTIVE_STATUSES
+// lists elsewhere in the app)
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress"];
 
+// Formats a duration in ms as "1h 30m" or just "45m" when under an hour
 function formatDuration(ms: number) {
   const totalMinutes = Math.round(ms / 60000);
   const hours = Math.floor(totalMinutes / 60);
@@ -16,6 +20,7 @@ function formatDuration(ms: number) {
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
+// Standard median: average the two middle values on an even-length list
 function median(values: number[]) {
   if (values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -23,6 +28,10 @@ function median(values: number[]) {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+// Platform-wide reports dashboard: response-time stats, per-home/category
+// breakdowns, recurring-problem callouts, and the manual assignment queue
+// for unassigned requests. Computed once here from raw request rows rather
+// than via SQL aggregates, since the dataset is small enough to crunch in JS.
 export default async function ReportsPage() {
   const admin = createAdminClient();
 
@@ -72,6 +81,7 @@ export default async function ReportsPage() {
   const medianMs = median(durations);
 
   const now = nowMs();
+  // What fraction of completed Urgent requests were resolved within the SLA window
   const urgentCompleted = completed.filter((r) => r.priority === "Urgent");
   const urgentWithinSla = urgentCompleted.filter(
     (r) =>
@@ -89,6 +99,8 @@ export default async function ReportsPage() {
   );
   const openOver7HomeCount = new Set(openOver7Days.map((r) => r.home_id)).size;
 
+  // Average completion time per home, normalized to a 0-100% bar width
+  // relative to the slowest home, with a color tone for anything over 24h/48h
   const homeDurations: Record<
     string,
     { name: string; total: number; count: number }
@@ -120,6 +132,8 @@ export default async function ReportsPage() {
             : ("default" as const),
     }));
 
+  // Request volume per category, normalized to a 0-100% bar width relative
+  // to the most common category
   const categoryCounts: Record<string, number> = {};
   for (const r of rows)
     categoryCounts[r.category] = (categoryCounts[r.category] ?? 0) + 1;
@@ -132,6 +146,8 @@ export default async function ReportsPage() {
       pct: Math.round((value / maxCategoryCount) * 100),
     }));
 
+  // Manual-assignment queue: active requests with nobody on them yet,
+  // oldest first, flagged if they've waited over a day
   const unassigned: UnassignedRow[] = rows
     .filter((r) => !r.assigned_to && ACTIVE_STATUSES.includes(r.status))
     .sort(

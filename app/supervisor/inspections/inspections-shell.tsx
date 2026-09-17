@@ -7,6 +7,8 @@ import { InspectionManager, type AgencyOption, type TemplateListItem } from "@/c
 import type { RunnableTemplate, RunHistoryRow } from "@/app/actions/inspections";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Tabs between running inspections (InspectionRunner) and authoring
+// checklists (InspectionManager) — supervisors get both, unlike staff/maintenance.
 export function SupervisorInspectionsShell({
   title,
   runnable,

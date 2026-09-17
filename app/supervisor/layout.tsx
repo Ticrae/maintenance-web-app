@@ -6,8 +6,12 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { getServerDictionary } from "@/lib/i18n/server";
 import { redirect } from "next/navigation";
 
+// Statuses that count toward the sidebar's open-requests badge
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
+// Shared shell for every /supervisor page: loads the current agency admin's
+// profile/agency and the sidebar's open-requests badge count, then renders
+// the sidebar around the page content.
 export default async function SupervisorLayout({
   children,
 }: {

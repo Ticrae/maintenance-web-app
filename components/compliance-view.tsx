@@ -12,10 +12,13 @@ import {
 } from "@/app/actions/compliance";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Formats a 0–1 rate as a rounded percentage, or an em dash when unknown
+// (e.g. no closed requests yet to compute a rate from)
 function pct(rate: number | null) {
   return rate === null ? "—" : `${Math.round(rate * 100)}%`;
 }
 
+// One compliance checklist line: a ✓/⚠/— icon based on `ok`, plus the raw value
 function ChecklistRow({ ok, label, value }: { ok: boolean | null; label: string; value: string }) {
   const icon = ok === null ? "—" : ok ? "✓" : "⚠";
   const tone = ok === null ? "text-meta" : ok ? "text-success" : "text-high";
@@ -29,6 +32,9 @@ function ChecklistRow({ ok, label, value }: { ok: boolean | null; label: string;
   );
 }
 
+// Shared compliance page for both admin and supervisor — `namespace` only
+// picks which role's page title/subtitle copy to show; the checklist and
+// report generator below are otherwise identical.
 export function ComplianceView({
   summary,
   homes,
@@ -48,6 +54,8 @@ export function ComplianceView({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetches and swaps in a home's monthly activity report, replacing the
+  // checklist/generator view with the printable ReportCard below.
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
     if (!homeId || !month) return;
@@ -70,6 +78,7 @@ export function ComplianceView({
       <PageHeader title={t.title} subtitle={t.subtitle} />
 
       <div className="flex flex-1 flex-col gap-5 bg-canvas p-4 sm:p-7 print:bg-white print:p-0">
+        {/* Documentation-quality checklist, hidden once a report is generated or when printing */}
         {!report && (
           <div className="flex flex-col gap-2 rounded-lg border border-black/[.09] bg-surface p-5 print:hidden">
             <Eyebrow>{c.checklistTitle}</Eyebrow>
@@ -89,6 +98,7 @@ export function ComplianceView({
           </div>
         )}
 
+        {/* Home + month picker that generates the printable report below */}
         {!report && (
           <div className="flex flex-col gap-4 rounded-lg border border-black/[.09] bg-surface p-5 print:hidden">
             <Eyebrow>{c.generateTitle}</Eyebrow>
@@ -125,9 +135,13 @@ export function ComplianceView({
   );
 }
 
+// Printable monthly activity report for a single home. Uses `print:` Tailwind
+// variants throughout to strip chrome (nav buttons, borders) when printed/exported to PDF.
 function ReportCard({ report, onBack }: { report: HomeActivityReport; onBack: () => void }) {
   const dict = useDictionary();
   const c = dict.common.compliance;
+  // Force UTC so the report always shows the intended calendar month
+  // regardless of the viewer's local timezone.
   const monthLabel = new Date(Date.UTC(report.year, report.month - 1, 1)).toLocaleDateString(undefined, {
     month: "long",
     year: "numeric",

@@ -13,6 +13,7 @@ import { HomeSafety } from "@/components/home-safety";
 import { useDictionary } from "@/lib/i18n/language-provider";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
+// Bar-fill and text colors for the median-response-by-home chart's tone levels
 const TONE_FILL: Record<string, string> = { default: "bg-graphite", amber: "bg-high-bar", red: "bg-urgent" };
 const TONE_TEXT: Record<string, string> = { default: "text-ink", amber: "text-high", red: "text-urgent" };
 
@@ -31,6 +32,9 @@ function assigneeName(a: Assignee, dict: Dictionary) {
   return [a.first_name, a.last_name].filter(Boolean).join(" ") || dict.common.unnamed;
 }
 
+// Platform-wide reports dashboard: stat tiles, per-home/category bar
+// charts, recurring-problem callouts, and the manual assignment queue for
+// unassigned requests.
 export function ReportsView({
   totalRequests,
   medianResponse,
@@ -63,6 +67,8 @@ export function ReportsView({
   const dict = useDictionary();
   const t = dict.admin.reports;
 
+  // Assigns a request via the unassigned-queue row's dropdown; wrapped in a
+  // transition so the Select stays responsive while it's in flight
   function handleAssign(requestId: string, userId: string) {
     if (!userId) return;
     setError(null);
@@ -143,6 +149,7 @@ export function ReportsView({
           )}
           <div className="flex flex-col gap-2">
             {unassigned.map((u) => {
+              // Only offer assignees from the same agency as the request
               const eligible = assignees.filter((a) => a.agency_id === u.agencyId);
               return (
                 <div
@@ -178,6 +185,8 @@ export function ReportsView({
   );
 }
 
+// Two callouts derived from getRecurringProblems: a bar chart of failures by
+// asset type, and a list of individual assets flagged for repeated recent failures
 function RecurringProblems({
   recurring,
   basePath,

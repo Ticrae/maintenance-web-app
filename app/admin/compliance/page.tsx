@@ -4,6 +4,7 @@ import { ComplianceView } from "@/components/compliance-view";
 
 export const dynamic = "force-dynamic";
 
+// Platform-wide compliance dashboard, using the shared ComplianceView (unscoped)
 export default async function AdminCompliancePage() {
   const [summary, homes] = await Promise.all([getComplianceSummary(), getHomes()]);
 

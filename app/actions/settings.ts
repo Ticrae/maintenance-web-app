@@ -6,6 +6,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type SettingsState = { error?: string } | undefined;
 
+// Updates the single platform-wide settings row (request categories + SLA
+// hours per priority). Super-admin only; returns an error object rather than
+// throwing so the settings form can display it inline.
 export async function updateSettings(_: SettingsState, formData: FormData): Promise<SettingsState> {
   await requireSuperAdmin();
 
@@ -25,6 +28,7 @@ export async function updateSettings(_: SettingsState, formData: FormData): Prom
     slaHours[priority] = raw;
   }
 
+  // app_settings is a singleton table with a single row keyed by id=true
   const admin = createAdminClient();
   const { error } = await admin
     .from("app_settings")

@@ -16,6 +16,9 @@ export type AppSettings = {
 
 const PRIORITIES = ["Urgent", "High", "Medium", "Low"] as const;
 
+// Platform settings form (request categories + SLA hours). `bare` strips its
+// own PageHeader/wrapper when embedded inside SettingsShell's "General" tab,
+// which already provides one.
 export function SettingsForm({
   settings,
   bare = false,
@@ -29,6 +32,8 @@ export function SettingsForm({
   const dict = useDictionary();
   const t = dict.admin.settings;
 
+  // The app_settings row doesn't exist until its migration has been run —
+  // show a setup notice instead of a broken form in that case
   if (!settings) {
     const notice = (
       <div className="p-4 text-sm text-meta sm:p-7">
@@ -48,6 +53,7 @@ export function SettingsForm({
     );
   }
 
+  // Adds the drafted category chip (skips duplicates) and clears the input
   function addCategory() {
     const value = draft.trim();
     if (value && !categories.includes(value)) setCategories((c) => [...c, value]);
@@ -60,6 +66,8 @@ export function SettingsForm({
 
   const form = (
     <form action={formAction} className="flex flex-1 flex-col gap-6 bg-canvas p-4 sm:p-7">
+        {/* Chips are edited as local state; this hidden field is what
+            actually reaches updateSettings via the form's FormData. */}
         <input type="hidden" name="categories" value={categories.join(",")} />
 
         <div className="flex flex-col gap-3 rounded-lg border border-black/[.09] bg-surface p-5">

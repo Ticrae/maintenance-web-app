@@ -1,3 +1,4 @@
+// Request priority levels and their badge/bar colors, keyed by tailwind class names
 export type Priority = "Urgent" | "High" | "Medium" | "Low";
 
 export const PRIORITY: Record<
@@ -13,6 +14,7 @@ export const PRIORITY: Record<
 // These values mirror the roles stored in the database.
 export type Role = "super_admin" | "agency_admin" | "maintenance" | "staff";
 
+// Human-readable label shown for each role in the UI
 export const ROLE_LABEL: Record<Role, string> = {
   super_admin: "Super admin",
   agency_admin: "Agency admin",
@@ -20,6 +22,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   staff: "Home staff",
 };
 
+// Badge colors for each role
 export const ROLE_CHIP: Record<Role, { bg: string; fg: string }> = {
   staff: { bg: "bg-chip", fg: "text-graphite" },
   maintenance: { bg: "bg-link-bg", fg: "text-link" },
@@ -27,6 +30,7 @@ export const ROLE_CHIP: Record<Role, { bg: string; fg: string }> = {
   super_admin: { bg: "bg-ink", fg: "text-white" },
 };
 
+// How a completed maintenance request was resolved
 export type Outcome = "Fixed" | "Contractor" | "Reopened";
 
 export const OUTCOME: Record<Outcome, { bg: string; fg: string }> = {
@@ -35,6 +39,7 @@ export const OUTCOME: Record<Outcome, { bg: string; fg: string }> = {
   Reopened: { bg: "bg-urgent-bg", fg: "text-urgent" },
 };
 
+// Safety inspection rating for a home, with a colored dot indicator
 export type SafetyLevel = "safe" | "caution" | "maintenance_required";
 
 export const SAFETY_LEVEL: Record<SafetyLevel, { bg: string; fg: string; dot: string }> = {
@@ -43,6 +48,7 @@ export const SAFETY_LEVEL: Record<SafetyLevel, { bg: string; fg: string; dot: st
   maintenance_required: { bg: "bg-urgent-bg", fg: "text-urgent", dot: "🔴" },
 };
 
+// Publishing state of a troubleshooting guide
 export type GuideStatus = "draft" | "review" | "published" | "archived";
 
 export const GUIDE_STATUS: Record<GuideStatus, { bg: string; fg: string }> = {
@@ -52,6 +58,7 @@ export const GUIDE_STATUS: Record<GuideStatus, { bg: string; fg: string }> = {
   archived: { bg: "bg-selected", fg: "text-faint" },
 };
 
+// Lifecycle state of a tracked asset (e.g. an appliance)
 export type AssetStatus = "active" | "out_of_service" | "retired";
 
 export const ASSET_STATUS: Record<AssetStatus, { bg: string; fg: string }> = {
@@ -60,6 +67,7 @@ export const ASSET_STATUS: Record<AssetStatus, { bg: string; fg: string }> = {
   retired: { bg: "bg-selected", fg: "text-faint" },
 };
 
+// Category of an in-app notification, used to color/label its chip
 export type NotifTag = "status" | "comment" | "urgent" | "reminder";
 
 export const NOTIF_TAG: Record<

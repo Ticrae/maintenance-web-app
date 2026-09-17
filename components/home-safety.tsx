@@ -5,12 +5,16 @@ import { Eyebrow } from "@/components/ui/misc";
 import { useDictionary } from "@/lib/i18n/language-provider";
 import type { getHomeSafetySummary } from "@/app/actions/safety";
 
+// Traffic-light indicator: green when clear, yellow for a small count,
+// red once it climbs past 2
 function dotFor(count: number): string {
   if (count === 0) return "🟢";
   if (count <= 2) return "🟡";
   return "🔴";
 }
 
+// Home safety summary card: key counts (open/overdue/safety/critical) plus
+// a per-home "needs attention" breakdown when anything is flagged.
 export function HomeSafety({
   summary,
   assetBasePath,

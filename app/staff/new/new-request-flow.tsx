@@ -13,6 +13,8 @@ import { useDictionary } from "@/lib/i18n/language-provider";
 import { RequestForm } from "./request-form";
 import { GuideRunner, type RunnerResult } from "./guide-runner";
 
+// The flow's screens: pick troubleshoot vs. submit, pick a guide, run it,
+// one of three outcome screens, or the final request form.
 type Phase =
   | "choose"
   | "pick"
@@ -22,6 +24,9 @@ type Phase =
   | "exhausted"
   | "form";
 
+// Best-effort guess at which request category matches a guide's asset type,
+// so the form can be prefilled with a sensible default (exact match first,
+// then a substring match either direction).
 function matchCategory(assetType: string | null, categories: string[]) {
   if (!assetType) return undefined;
   const lower = assetType.toLowerCase();
@@ -33,6 +38,8 @@ function matchCategory(assetType: string | null, categories: string[]) {
   );
 }
 
+// Shared header/frame for every screen in this flow except the final form,
+// which renders its own chrome (see RequestForm)
 function Shell({ children }: { children: React.ReactNode }) {
   const dict = useDictionary();
   const t = dict.staff.newRequest;
@@ -56,6 +63,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Orchestrates the "report a problem" flow: staff can either walk a guided
+// troubleshooting checklist first, or skip straight to submitting a
+// request. If troubleshooting doesn't resolve the issue, its summary gets
+// carried into the final request form.
 export function NewRequestFlow({
   categories,
   homes,
@@ -88,6 +99,7 @@ export function NewRequestFlow({
 
   const hasGuides = guides.length > 0;
 
+  // Guide search across problem/title/asset type
   const filteredGuides = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return guides;
@@ -99,6 +111,7 @@ export function NewRequestFlow({
     );
   }, [guides, search]);
 
+  // Skips the picker straight to the form if there are no guides to offer
   function startTroubleshooting() {
     if (hasGuides) {
       setPhase("pick");
@@ -109,6 +122,8 @@ export function NewRequestFlow({
     }
   }
 
+  // Routes to the matching outcome screen once the guide runner finishes,
+  // building the troubleshooting summary to carry into the request form if unresolved
   function handleRunnerEnd(result: RunnerResult) {
     if (result.kind === "resolved") {
       setTroubleshooting(null);

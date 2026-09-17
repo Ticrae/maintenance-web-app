@@ -79,6 +79,9 @@ export type HomeActivityReport = {
   inspectionsCompleted: number;
 };
 
+// Builds a single home's monthly activity report (requests received/
+// completed/outstanding, critical issues, inspections completed) for the
+// printable compliance report card.
 export async function getHomeActivityReport(
   homeId: string,
   year: number,

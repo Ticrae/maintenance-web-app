@@ -29,14 +29,18 @@ export type StaffRequestRow = {
   photoCount: number;
 };
 
+// Shared grid-template-columns for both the header row and each data row, so
+// their columns always line up
 const GRID_COLS = "grid-cols-[104px_minmax(280px,1fr)_130px_118px_132px_100px]";
 
+// Maps the sidebar's `?status=` filter key to the actual request statuses it covers
 const STATUS_FILTERS: Record<string, RequestStatus[]> = {
   open: ["Open"],
   "in-progress": ["Assigned", "In Progress", "Waiting for Parts"],
   completed: ["Completed"],
 };
 
+// Formats a duration in ms as "1h 30m" or just "45m" when under an hour
 function formatDuration(ms: number) {
   const totalMinutes = Math.round(ms / 60000);
   const hours = Math.floor(totalMinutes / 60);
@@ -44,6 +48,8 @@ function formatDuration(ms: number) {
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
+// Staff member's own requests list: stat tiles, an optional status-filter
+// banner (driven by the sidebar's ?status= links), search, and the table.
 export function MyRequestsTable({
   requests,
   homeName,
@@ -91,6 +97,7 @@ export function MyRequestsTable({
       r.status !== "Cancelled",
   ).length;
 
+  // Human-readable label for the "clear filter" banner above the table
   const filterLabel =
     statusFilter === "open"
       ? dict.common.status.Open

@@ -4,6 +4,8 @@ import { getServerDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
+// Platform-wide "maintenance intelligence" insights (no agency scoping,
+// unlike the supervisor version of this page), using the shared component
 export default async function AdminIntelligencePage() {
   const dict = await getServerDictionary();
   const data = await getMaintenanceIntelligence();

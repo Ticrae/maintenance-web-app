@@ -22,11 +22,14 @@ export type RunnerResult = {
 // more than this many steps almost certainly means a cycle in the graph.
 const MAX_TRANSITIONS = 100;
 
+// The guide's entry point: the lowest-numbered step
 function firstStep(steps: RunnerStep[]): RunnerStep | null {
   if (steps.length === 0) return null;
   return steps.reduce((min, s) => (s.step_number < min.step_number ? s : min));
 }
 
+// Fallback used when an option has no explicit next_step_id: just advance
+// to the next step in numeric order
 function nextByNumber(steps: RunnerStep[], current: RunnerStep): RunnerStep | null {
   const ahead = steps
     .filter((s) => s.step_number > current.step_number)
@@ -34,6 +37,10 @@ function nextByNumber(steps: RunnerStep[], current: RunnerStep): RunnerStep | nu
   return ahead[0] ?? null;
 }
 
+// Walks a published troubleshooting guide step by step, following each
+// step's branching options (or a plain yes/no when a step has none) until
+// it reaches a terminal action (finish/stop/create_request) or hits the
+// max-transitions safety net.
 export function GuideRunner({
   guideId,
   onEnd,
@@ -93,6 +100,8 @@ export function GuideRunner({
     .sort((a, b) => a.step_number - b.step_number)
     .findIndex((s) => s.id === step.id);
 
+  // Advances to `target`, or ends the flow as unresolved if there's nowhere
+  // to go (dead end) or the transition cap has been hit (likely a cycle)
   function goToStep(target: RunnerStep | null, completed: number) {
     if (!target || transitions.current >= MAX_TRANSITIONS) {
       onEnd({ kind: "unresolved", stepsCompleted: completed });
@@ -103,6 +112,7 @@ export function GuideRunner({
     setCurrentStepId(target.id);
   }
 
+  // Resolves an author-defined option's action into a runner transition
   function handleOption(option: RunnerOption) {
     const completed = answered + 1;
     const action = option.action ?? "continue";
@@ -137,6 +147,7 @@ export function GuideRunner({
     goToStep(nextByNumber(guide!.steps, step), completed);
   }
 
+  // Resets back to the guide's first step, discarding progress
   function restart() {
     transitions.current = 0;
     setAnswered(0);

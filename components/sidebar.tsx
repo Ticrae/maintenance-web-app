@@ -2,6 +2,12 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui/misc";
 import { LanguageToggle } from "@/components/language-toggle";
 
+// Shared building blocks for each role's desktop sidebar + mobile nav
+// equivalents (staff/maintenance/supervisor each compose their own sidebar
+// from these pieces; admin uses top-tabs.tsx instead).
+
+// Desktop-only (`md:flex`) fixed-width sidebar container, hidden on mobile
+// and hidden entirely when printing.
 export function SidebarShell({
   width = 230,
   children,
@@ -20,6 +26,7 @@ export function SidebarShell({
   );
 }
 
+// Brand mark at the top of the sidebar, with an optional "admin" chip
 export function SidebarLogo({ adminChip = false }: { adminChip?: boolean }) {
   return (
     <div className="flex items-center gap-[10px] px-[18px] pb-[22px]">
@@ -36,6 +43,8 @@ export function SidebarLogo({ adminChip = false }: { adminChip?: boolean }) {
   );
 }
 
+// A single sidebar nav link, optionally showing a trailing count or an
+// unread-style badge; renders as a non-link div when `disabled` or no `href`.
 export function SidebarNavItem({
   href,
   label,
@@ -88,10 +97,12 @@ export function SidebarNavItem({
   );
 }
 
+// Vertically stacks a group of SidebarNavItems
 export function SidebarNavGroup({ children }: { children: React.ReactNode }) {
   return <div className="flex flex-col gap-[2px] px-0">{children}</div>;
 }
 
+// Small uppercase heading above a SidebarNavGroup
 export function SidebarSectionLabel({
   children,
 }: {
@@ -104,6 +115,8 @@ export function SidebarSectionLabel({
   );
 }
 
+// Mobile-only (`md:hidden`) pill-style top tab bar, the small-screen
+// replacement for the desktop sidebar's nav items.
 export function MobileTabBar({
   items,
 }: {
@@ -146,6 +159,9 @@ export function MobileTabBar({
   );
 }
 
+// Mobile-only floating bottom bar showing the current user + quick actions
+// (language toggle, sign out), the small-screen replacement for
+// SidebarUserFooter.
 export function MobileUserBar({
   initials,
   name,
@@ -178,6 +194,8 @@ export function MobileUserBar({
   );
 }
 
+// Desktop sidebar footer: language toggle, avatar + name, and optional
+// trailing actions (e.g. the sign-out button)
 export function SidebarUserFooter({
   initials,
   name,

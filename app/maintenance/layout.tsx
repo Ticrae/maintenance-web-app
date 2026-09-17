@@ -6,8 +6,12 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { getServerDictionary } from "@/lib/i18n/server";
 import { redirect } from "next/navigation";
 
+// Statuses that count toward the sidebar's unclaimed job-queue badge
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
+// Shared shell for every /maintenance page: loads the current worker's
+// profile/agency and the sidebar badge counts (queue size, own active jobs,
+// own completed jobs), then renders the sidebar around the page content.
 export default async function MaintenanceLayout({ children }: { children: React.ReactNode }) {
   const dict = await getServerDictionary();
   const supabase = await createClient();

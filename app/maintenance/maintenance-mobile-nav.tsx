@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
-export type SupervisorNavItem = {
+export type MaintenanceNavItem = {
   href: string;
   label: string;
   active: boolean;
@@ -12,12 +12,12 @@ export type SupervisorNavItem = {
 };
 
 // Mobile-only top bar + slide-over menu, the small-screen replacement for
-// the supervisor desktop sidebar
-export function SupervisorMobileNav({
+// the maintenance desktop sidebar (mirrors SupervisorMobileNav)
+export function MaintenanceMobileNav({
   items,
   subtitle,
 }: {
-  items: SupervisorNavItem[];
+  items: MaintenanceNavItem[];
   subtitle: string;
 }) {
   const [open, setOpen] = useState(false);

@@ -19,6 +19,7 @@ export type RelativeTimeDict = {
   daysAgo: (n: number) => string;
 };
 
+// English fallback strings, used when the caller doesn't pass a localized dict
 const EN_RELATIVE_TIME: RelativeTimeDict = {
   justNow: "just now",
   minutesAgo: (n) => `${n}m ago`,

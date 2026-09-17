@@ -6,6 +6,9 @@ import { SupervisorRequestsTable, type RequestRow, type Assignee } from "./reque
 
 export const dynamic = "force-dynamic";
 
+// All requests for the supervisor's own agency, plus lookup maps for
+// reporter/assignee display names, the pool of maintenance workers they can
+// assign to, and their contractor directory (for the assignment drawer).
 export default async function SupervisorRequestsPage() {
   const supabase = await createClient();
   const {

@@ -13,6 +13,9 @@ const FALLBACK_CATEGORIES = [
   "Other",
 ];
 
+// Loads everything the new-request flow needs upfront: the agency's request
+// categories, its homes, and any published troubleshooting guides — then
+// hands off to the client-side flow component.
 export default async function NewRequestPage() {
   const supabase = await createClient();
   const {

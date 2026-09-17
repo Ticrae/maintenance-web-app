@@ -1,5 +1,8 @@
 import { LanguageToggle } from "@/components/language-toggle";
 
+// Shared building blocks for the unauthenticated auth pages (login, reset
+// password, accept invite, etc): a top logo bar, a centered card, and the
+// split layout with an optional promo panel on wide screens.
 export function AuthLogo() {
   return (
     <div className="flex items-center justify-between gap-[10px]">
@@ -14,12 +17,15 @@ export function AuthLogo() {
   );
 }
 
+// Fixed-width card that centers auth form content
 export function AuthCard({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex w-full max-w-[376px] flex-col gap-6">{children}</div>
   );
 }
 
+// Two-column layout: form on the left always, marketing `promo` content on
+// the right only on large screens.
 export function AuthSplitShell({
   children,
   promo,

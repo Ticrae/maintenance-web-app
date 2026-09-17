@@ -9,8 +9,12 @@ export type RelativeTimeDict = {
   daysAgo: (n: number) => string;
 };
 
+// Shared translation strings reused across every role's UI (generic buttons,
+// table headers, status/priority/role labels, and shared feature panels like
+// inspections/compliance/intelligence). `en` and `fr` mirror the same shape.
 export const common = {
   en: {
+    // Generic chrome/action labels used app-wide
     brand: "FixNest",
     adminBadge: "Admin",
     menu: "Menu",
@@ -28,6 +32,8 @@ export const common = {
     unassigned: "Unassigned",
     assignTo: "Assign to…",
     openRef: (ref: string) => `Open ${ref}`,
+    // Enum label maps — `satisfies Record<...>` keeps them in sync with the
+    // underlying type union whenever a new status/priority/etc is added
     status: {
       Open: "Open",
       Assigned: "Assigned",
@@ -64,6 +70,7 @@ export const common = {
       out_of_service: "Out of service",
       retired: "Retired",
     } satisfies Record<AssetStatus, string>,
+    // Shared data-table column headers
     table: {
       ref: "Ref",
       issue: "Issue",
@@ -81,12 +88,14 @@ export const common = {
       agency: "Agency",
       actions: "Actions",
     },
+    // Dashboard stat-tile labels
     stat: {
       totalRequests: "Total requests",
       open: "Open",
       urgentOpen: "Urgent open",
       unassigned: "Unassigned",
     },
+    // Relative-time formatting strings (see lib/date.ts's relativeTime)
     time: {
       justNow: "just now",
       minutesAgo: (n: number) => `${n}m ago`,
@@ -94,16 +103,19 @@ export const common = {
       yesterday: "yesterday",
       daysAgo: (n: number) => `${n}d ago`,
     } satisfies RelativeTimeDict,
+    // Steps shown in the request status/progress tracker
     progressSteps: {
       reported: "Reported",
       accepted: "Accepted",
       onSite: "On site",
       completed: "Completed",
     },
+    // Shared "add a photo" upload tile copy
     addPhoto: {
       label: "Add photo",
       hint: "drag or browse",
     },
+    // Asset "case file" detail page (repair history, cost, downtime)
     caseFile: {
       backToAssets: "← Back to assets",
       totalCost: "Total repair cost",
@@ -123,6 +135,7 @@ export const common = {
       costRatioWarning: (pct: number) =>
         `⚠️ This asset has consumed ${pct}% of its original purchase price in repairs. Consider replacement.`,
     },
+    // Recurring-problems insight panel (assets failing repeatedly)
     recurring: {
       title: "Recurring Problems",
       byAssetType: "By asset type",
@@ -131,6 +144,7 @@ export const common = {
       mostCommonIssue: (category: string) => `Most common issue: ${category}`,
       recommendedAction: "Recommended action: Inspect or evaluate replacement.",
     },
+    // Home safety overview panel
     homeSafety: {
       title: "Home Safety",
       openMaintenance: "Open maintenance",
@@ -148,6 +162,7 @@ export const common = {
       flaggedAssetLine: (name: string, n: number, category: string | null) =>
         `${name} has failed ${n} times in the last 90 days${category ? ` (mostly ${category})` : ""}`,
     },
+    // Inspection checklists: starting a run, answering items, history
     inspections: {
       startTitle: "Start an inspection",
       noRunnable: "No published checklists for your agency yet.",
@@ -177,6 +192,7 @@ export const common = {
       runTab: "Run inspections",
       manageTab: "Manage checklists",
     },
+    // Compliance metrics + activity report generator
     compliance: {
       checklistTitle: "Maintenance compliance",
       notesRateLabel: "Closed requests with completion notes",
@@ -200,6 +216,7 @@ export const common = {
       criticalIssuesLabel: "Critical issues",
       inspectionsCompletedLabel: "Inspections completed",
     },
+    // Contractor assignment drawer (status, appointment, quote, invoice)
     contractorAssignment: {
       title: "Contractor",
       statusField: "Status",
@@ -227,6 +244,7 @@ export const common = {
       assignError: "Could not assign this contractor.",
       updateError: "Could not update this assignment.",
     },
+    // "Maintenance intelligence" insights panel (cost/trend analysis)
     intelligence: {
       subtitle: "What should I worry about?",
       allClear: "Nothing needs attention right now — everything looks healthy.",
@@ -240,6 +258,7 @@ export const common = {
       trendHomes: (n: number) => `Spread across ${n} home${n === 1 ? "" : "s"}`,
     },
   },
+  // French translations — same keys/shape as `en` above
   fr: {
     brand: "FixNest",
     adminBadge: "Admin",

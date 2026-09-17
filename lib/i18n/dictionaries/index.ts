@@ -5,6 +5,8 @@ import { supervisor } from "./supervisor";
 import { maintenance } from "./maintenance";
 import { staff } from "./staff";
 
+// Combines each area's per-locale translation strings into one dictionary
+// per locale, namespaced by area (common, auth, admin, etc).
 export const dictionaries = {
   en: {
     common: common.en,

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Sets the initial password for a newly-invited account (the invite link
+// already established a session server-side via /auth/confirm)
 export default function AcceptInvitePage() {
   const router = useRouter();
 

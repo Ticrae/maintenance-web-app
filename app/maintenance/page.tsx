@@ -4,8 +4,11 @@ import { getServerDictionary } from "@/lib/i18n/server";
 import { redirect } from "next/navigation";
 import { QueueView, type QueueRow } from "./queue-view";
 
+// Statuses shown in the queue — anything not yet completed/cancelled
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
+// Unclaimed/active job queue for the worker's agency: loads every active
+// request plus each assignee's display name, for filtering by location/active in QueueView.
 export default async function JobQueuePage() {
   const dict = await getServerDictionary();
   const supabase = await createClient();

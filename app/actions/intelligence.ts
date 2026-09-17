@@ -48,6 +48,7 @@ export async function getMaintenanceIntelligence(agencyId?: string) {
     { id: string; description: string; priority: Priority; created_at: string; homes: { name: string } | null }[]
   >();
 
+  // Open requests already past their SLA deadline, capped to the 10 worst
   const immediateAttention: AttentionRequest[] = (openRows ?? [])
     .filter((r) => isOverdue(r.created_at, r.priority, slaHours))
     .map((r) => ({ id: r.id, title: r.description.split("\n")[0], homeName: r.homes?.name ?? "—" }))
@@ -68,6 +69,7 @@ export async function getMaintenanceIntelligence(agencyId?: string) {
     .filter((r) => new Date(r.started_at).getTime() < staleCutoff)
     .map((r) => ({ id: r.id, templateName: r.inspection_templates?.name ?? "—", homeName: r.homes?.name ?? "—" }));
 
+  // Which assets are driving repair spend over the last 90 days
   const costCutoff = new Date(Date.now() - COST_WINDOW_DAYS * 86_400_000).toISOString();
   let costQuery = admin
     .from("requests")
@@ -97,6 +99,8 @@ export async function getMaintenanceIntelligence(agencyId?: string) {
     costInsight = { totalCost, topAssets };
   }
 
+  // Compare the last 30 days against the 30 days before that, per category,
+  // to spot a category trending sharply upward
   const now = Date.now();
   const priorStart = new Date(now - 2 * TREND_WINDOW_DAYS * 86_400_000).toISOString();
   const windowStartMs = now - TREND_WINDOW_DAYS * 86_400_000;
@@ -118,6 +122,7 @@ export async function getMaintenanceIntelligence(agencyId?: string) {
     }
   }
 
+  // Pick the single biggest qualifying increase (if any) to surface as the trend
   let emergingTrend: EmergingTrend = null;
   let bestPct = TREND_MIN_PCT;
   for (const [category, entry] of recentByCat) {

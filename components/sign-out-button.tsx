@@ -5,6 +5,8 @@ import { signOut } from "@/app/actions/auth";
 import { buttonClasses } from "@/components/ui/button";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Reads the enclosing <form>'s pending state via useFormStatus to show a
+// "signing out…" label while the sign-out server action runs.
 function SubmitButton({ inverted }: { inverted?: boolean }) {
   const { pending } = useFormStatus();
   const dict = useDictionary();
@@ -24,6 +26,8 @@ function SubmitButton({ inverted }: { inverted?: boolean }) {
   );
 }
 
+// A <form> wrapping the sign-out server action; `inverted` selects the
+// light-on-dark styling variant used on dark-background sidebars.
 export function SignOutButton({ inverted = false }: { inverted?: boolean }) {
   return (
     <form action={signOut}>

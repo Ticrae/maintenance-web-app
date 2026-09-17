@@ -19,8 +19,11 @@ export type CompletedRow = {
   photoCount: number;
 };
 
+// Shared grid-template-columns for both the header row and each data row, so
+// their columns always line up
 const GRID_COLS = "grid-cols-[96px_minmax(280px,1fr)_140px_130px_100px_120px]";
 
+// Formats a duration in ms as "1h 30m" or just "45m" when under an hour
 function formatDuration(ms: number) {
   const totalMinutes = Math.round(ms / 60000);
   const hours = Math.floor(totalMinutes / 60);
@@ -28,6 +31,7 @@ function formatDuration(ms: number) {
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
+// Standard median: average the two middle values on an even-length list
 function median(values: number[]) {
   if (values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -35,6 +39,8 @@ function median(values: number[]) {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+// Completed-jobs history for the worker: home + "missing evidence" (no
+// photos) filters, search, and stat tiles (count/median time/evidence rate).
 export function CompletedView({ completed, homes }: { completed: CompletedRow[]; homes: { id: string; name: string }[] }) {
   const dict = useDictionary();
   const t = dict.maintenance.completed;

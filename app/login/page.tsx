@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { PhotoPlaceholder } from "@/components/ui/misc";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Inline Google "G" logo mark for the OAuth button
 function GoogleIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true">
@@ -34,6 +35,9 @@ function GoogleIcon() {
   );
 }
 
+// Reads ?expired= / ?error= query params (set by the middleware/OAuth
+// callback redirects) and shows the matching banner message. Wrapped in
+// <Suspense> below since useSearchParams requires it.
 function SessionMessage({ t }: { t: ReturnType<typeof useDictionary>["auth"]["login"] }) {
   const searchParams = useSearchParams();
   const expired = searchParams.get("expired");
@@ -66,6 +70,8 @@ export default function LoginPage() {
   const dict = useDictionary();
   const t = dict.auth.login;
 
+  // Client-side OAuth kickoff (can't run through the server action form
+  // below, since it needs to redirect the browser to Google)
   async function handleGoogleSignIn() {
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({

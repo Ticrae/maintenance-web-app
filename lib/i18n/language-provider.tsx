@@ -13,6 +13,8 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
+// Client-side provider that makes the current locale/dictionary available to
+// the component tree, and lets it be changed at runtime.
 export function LanguageProvider({
   initialLocale,
   children,
@@ -23,6 +25,9 @@ export function LanguageProvider({
   const router = useRouter();
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
+  // Updates local state immediately, persists the choice in a 1-year cookie
+  // for the server to read on future requests, then refreshes so Server
+  // Components re-render with the new locale's dictionary.
   const setLocale = useCallback(
     (next: Locale) => {
       setLocaleState(next);
@@ -40,6 +45,7 @@ export function LanguageProvider({
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
+// Access the language context; throws if used outside a LanguageProvider
 export function useLanguage() {
   const ctx = useContext(LanguageContext);
   if (!ctx) throw new Error("useLanguage must be used within a LanguageProvider");

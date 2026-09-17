@@ -16,8 +16,13 @@ export type AgencyRow = { id: string; name: string };
 export type PersonRow = { id: string; name: string; email: string; role: Role; homeName: string; agencyName: string };
 
 const ROLES: (Role | "All")[] = ["All", "staff", "maintenance", "agency_admin", "super_admin"];
+// Shared grid-template-columns for both the people table's header row and
+// each data row, so their columns always line up
 const PEOPLE_GRID_COLS = "grid-cols-[36px_minmax(180px,1fr)_150px_170px_170px]";
 
+// Three-panel admin view: agencies list, homes list (each with open-request
+// count), and a role-filterable people table — plus drawers for creating a
+// new home or agency.
 export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agencies: AgencyRow[]; people: PersonRow[] }) {
   const dict = useDictionary();
   const t = dict.admin.homes;
@@ -33,6 +38,7 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
 
   const filteredPeople = roleFilter === "All" ? people : people.filter((p) => p.role === roleFilter);
 
+  // Creates a new home, optionally attached to an agency
   async function handleCreateHome(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
@@ -51,6 +57,7 @@ export function HomesView({ homes, agencies, people }: { homes: HomeRow[]; agenc
     }
   }
 
+  // Creates a new agency
   async function handleCreateAgency(e: React.FormEvent) {
     e.preventDefault();
     if (!agencyName.trim()) return;

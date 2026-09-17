@@ -25,6 +25,8 @@ export type AssetType = {
 export type AgencyOption = { id: string; name: string };
 export type GuideListItem = GuideListRow & { stepCount: number };
 
+// Troubleshooting-guide authoring tool: an asset-type filter sidebar, a
+// searchable guide list, and the selected guide's editable detail panel.
 export function TroubleshootingManager({
   assetTypes: initialAssetTypes,
   agencies,
@@ -65,6 +67,9 @@ export function TroubleshootingManager({
     });
   }, [guides, assetTypeFilter, search]);
 
+  // Loads the selected guide's full detail (steps + options) whenever the
+  // selection changes; `cancelled` guards against a stale response landing
+  // after the user has since picked a different guide.
   useEffect(() => {
     if (!selectedGuideId) return;
     let cancelled = false;
@@ -76,10 +81,12 @@ export function TroubleshootingManager({
     };
   }, [selectedGuideId]);
 
+  // Guard against rendering stale detail for a guide that's no longer selected
   const activeGuideDetail =
     selectedGuideId && guideDetail?.id === selectedGuideId ? guideDetail : null;
   const detailLoading = !!selectedGuideId && !activeGuideDetail;
 
+  // Re-fetches the current guide's detail after an edit (step/option add/edit/move/delete)
   function refreshGuideDetail() {
     if (!selectedGuideId) return;
     getGuideDetail(selectedGuideId).then(setGuideDetail);
@@ -270,6 +277,7 @@ export function TroubleshootingManager({
   );
 }
 
+// Create/edit/delete drawer for an asset type. `value === null` means "new"
 function AssetTypeDrawer({
   value,
   onClose,
@@ -291,6 +299,7 @@ function AssetTypeDrawer({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Creates or updates the asset type depending on whether `value` is set
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
@@ -328,6 +337,7 @@ function AssetTypeDrawer({
     }
   }
 
+  // Deletes the asset type; called only after the two-step confirm above
   async function handleDelete() {
     if (!value) return;
     setPending(true);
@@ -429,6 +439,8 @@ function AssetTypeDrawer({
   );
 }
 
+// Slide-over drawer for creating a brand-new troubleshooting guide (starts
+// as a draft with no steps; steps/options are added afterward in GuideDetailPanel)
 function NewGuideDrawer({
   assetTypes,
   agencies,

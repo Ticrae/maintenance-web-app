@@ -7,6 +7,9 @@ import type { AppSettings } from "./settings-form";
 
 export const dynamic = "force-dynamic";
 
+// Loads everything for the tabbed settings shell: platform settings,
+// troubleshooting-guide authoring data (asset types/agencies/guides), and
+// inspection-checklist authoring data (templates).
 export default async function AdminSettingsPage() {
   const supabase = await createClient();
   const { data: settings } = await supabase

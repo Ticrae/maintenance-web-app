@@ -1,5 +1,8 @@
+// Translation strings for the agency-admin ("/supervisor") area: home-scoped
+// requests, assets, contractors, compliance and inspection management.
 export const supervisor = {
   en: {
+    // Sidebar navigation labels
     nav: {
       intelligence: "Intelligence",
       overview: "Overview",
@@ -12,6 +15,7 @@ export const supervisor = {
     layout: {
       you: "You",
     },
+    // Landing dashboard stats/panels
     overview: {
       title: "Supervisor overview",
       subtitle: "Monitor active work and priorities across your homes",
@@ -27,6 +31,7 @@ export const supervisor = {
       openRequestsByHome: "Open requests by home",
       openRequestsCount: (n: number) => `${n} open requests`,
     },
+    // Agency-scoped requests table
     requests: {
       title: "Requests",
       subtitle: "Every request across your homes",
@@ -35,6 +40,7 @@ export const supervisor = {
       assignError: "Could not assign this request.",
       noMatch: "No requests match.",
     },
+    // Agency-scoped asset directory (create/edit/retire)
     assets: {
       title: "Assets",
       subtitle: "Every physical asset across your homes",
@@ -67,6 +73,7 @@ export const supervisor = {
       title: "Compliance",
       subtitle: "Evidence that maintenance work is actually documented, across your homes",
     },
+    // Agency vendor directory (create/edit/retire)
     contractors: {
       title: "Contractors",
       subtitle: "Your agency's vendor directory",
@@ -93,6 +100,7 @@ export const supervisor = {
       noContractorsYet: "No contractors yet.",
       noMatch: "No contractors match.",
     },
+    // Inspection-checklist authoring tool (agency-scoped)
     inspections: {
       templatesHeading: "Checklists",
       searchPlaceholder: "Search checklists…",
@@ -129,6 +137,7 @@ export const supervisor = {
       deleteItemError: "Could not delete this item.",
     },
   },
+  // French translations — same keys/shape as `en` above
   fr: {
     nav: {
       intelligence: "Intelligence",

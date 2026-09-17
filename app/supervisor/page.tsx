@@ -8,8 +8,11 @@ import { getServerDictionary } from "@/lib/i18n/server";
 import { getHomeSafetySummary } from "@/app/actions/safety";
 import { redirect } from "next/navigation";
 
+// Statuses counted toward "open" for this overview page
 const ACTIVE_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
+// Supervisor landing dashboard: stat tiles, urgent-jobs list, the shared
+// HomeSafety panel, and an open-requests-by-home breakdown.
 export default async function SupervisorPage() {
   const dict = await getServerDictionary();
   const t = dict.supervisor.overview;

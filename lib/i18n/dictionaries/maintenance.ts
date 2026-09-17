@@ -1,5 +1,8 @@
+// Translation strings for the maintenance-worker ("/maintenance") area: the
+// job queue, "my jobs", job detail view, and completed-jobs history.
 export const maintenance = {
   en: {
+    // Sidebar navigation labels
     nav: {
       queue: "Queue",
       myJobs: "My jobs",
@@ -9,6 +12,7 @@ export const maintenance = {
     layout: {
       you: "You",
     },
+    // Unclaimed job queue, filterable by location/active
     queue: {
       title: "Job queue",
       subtitle: (shown: number, total: number, filters: number) =>
@@ -23,6 +27,7 @@ export const maintenance = {
       acceptError: "Could not accept this job.",
       noMatch: "No jobs match.",
     },
+    // Worker's own accepted-job list
     myJobs: {
       subtitle: (n: number) => `${n} active`,
       overview: "Overview",
@@ -45,6 +50,7 @@ export const maintenance = {
       updateError: "Could not update this job.",
       noActiveJobs: "No active jobs.",
     },
+    // Single-job detail page: status stepper, photos, comments, completion form
     jobDetail: {
       raisedBy: (name: string) => `raised by ${name}`,
       markCompleted: "Mark completed",
@@ -76,6 +82,7 @@ export const maintenance = {
       completeWithoutNotes: "Complete without notes",
       completeButton: "Complete",
     },
+    // Completed-jobs history table, flagging jobs missing evidence
     completed: {
       subtitle: (n: number) => `${n} jobs`,
       searchPlaceholder: "Search issue or category…",
@@ -90,6 +97,7 @@ export const maintenance = {
       noMatch: "No completed jobs match.",
     },
   },
+  // French translations — same keys/shape as `en` above
   fr: {
     nav: {
       queue: "File d'attente",

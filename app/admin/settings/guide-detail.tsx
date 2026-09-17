@@ -29,6 +29,9 @@ const STATUSES: GuideStatus[] = ["draft", "review", "published", "archived"];
 const STEP_TYPES: StepType[] = ["question", "instruction", "information"];
 const SAFETY_LEVELS: SafetyLevel[] = ["safe", "caution", "maintenance_required"];
 
+// Right-hand panel for a selected guide: editable metadata form on top, its
+// ordered list of steps (each with their own branching options) below, plus
+// an "add step" form at the end.
 export function GuideDetailPanel({
   guide,
   assetTypes,
@@ -71,6 +74,8 @@ export function GuideDetailPanel({
   );
 }
 
+// Editable guide metadata (asset type/agency/problem/status/title/
+// description) plus a two-step confirm to delete the whole guide
 function GuideMetaForm({
   guide,
   assetTypes,
@@ -96,6 +101,7 @@ function GuideMetaForm({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Persists the guide's editable metadata fields
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !problem.trim()) return;
@@ -198,10 +204,14 @@ function GuideMetaForm({
   );
 }
 
+// "Step N: Title" label used in the target-step dropdown when wiring an
+// option's "continue to another step" action
 function stepLabel(step: StepRow, t: Dictionary["admin"]["troubleshooting"]) {
   return `${t.step} ${step.step_number}: ${step.title}`;
 }
 
+// Human-readable summary of what an option does: a fixed label for the
+// terminal actions, or "Go to step N" resolved from its target step
 function outcomeLabel(option: OptionRow, allSteps: StepRow[], t: Dictionary["admin"]["troubleshooting"]) {
   if (option.action === "create_request") return t.createRequestAction;
   if (option.action === "finish") return t.finishAction;
@@ -210,6 +220,8 @@ function outcomeLabel(option: OptionRow, allSteps: StepRow[], t: Dictionary["adm
   return target ? t.goToStep(target.step_number) : t.chooseTargetStep;
 }
 
+// A single step's read-only card (with move/edit/delete controls and its
+// options list), swapping to StepForm inline when `editing`
 function StepCard({
   step,
   allSteps,
@@ -231,6 +243,7 @@ function StepCard({
   const [error, setError] = useState<string | null>(null);
   const [addingOption, setAddingOption] = useState(false);
 
+  // Swaps this step's step_number with its immediate neighbor
   async function handleMove(direction: "up" | "down") {
     setPending(true);
     try {
@@ -241,6 +254,7 @@ function StepCard({
     }
   }
 
+  // Deletes the step; called only after the two-step confirm above
   async function handleDelete() {
     setPending(true);
     setError(null);
@@ -356,6 +370,8 @@ function StepCard({
   );
 }
 
+// A single option's read-only row (label + resolved outcome, with edit/
+// delete controls), swapping to OptionForm inline when `editing`
 function OptionEditor({
   option,
   allSteps,
@@ -386,6 +402,8 @@ function OptionEditor({
     );
   }
 
+  // Removes this option from its step (no confirm step here, unlike
+  // steps/guides, since options are cheap to re-add)
   async function handleDelete() {
     setPending(true);
     setError(null);
@@ -423,6 +441,8 @@ function OptionEditor({
   );
 }
 
+// Create/edit form for a single option. `option` present means edit mode;
+// absent means create mode (bound to `stepId`).
 function OptionForm({
   stepId,
   allSteps,
@@ -446,6 +466,7 @@ function OptionForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // A step can't link to itself
   const targetSteps = allSteps.filter((s) => s.id !== currentStepId);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -511,6 +532,8 @@ function OptionForm({
   );
 }
 
+// Create/edit form for a single step. `step` present means edit mode;
+// absent means create mode (bound to `guideId`).
 function StepForm({
   guideId,
   step,
@@ -609,6 +632,7 @@ function StepForm({
   );
 }
 
+// "+ Add step" button that reveals a blank StepForm in create mode when clicked
 function AddStepForm({ guideId, onRefresh }: { guideId: string; onRefresh: () => void }) {
   const dict = useDictionary();
   const t = dict.admin.troubleshooting;

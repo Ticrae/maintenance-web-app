@@ -37,10 +37,11 @@ export function RequestForm({
   onBack?: () => void;
 }) {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null); // hidden <input type="file">, opened via the "add photo" tile
   const dict = useDictionary();
-  const t = dict.staff.newRequest;
+  const t = dict.staff.newRequest; // scoped translation strings for this page
 
+  // Core form fields
   const [title, setTitle] = useState(prefill?.title ?? "");
   const [homeId, setHomeId] = useState(defaultHomeId || homes[0]?.id || "");
   const [category, setCategory] = useState(
@@ -51,6 +52,7 @@ export function RequestForm({
   const [priority, setPriority] = useState<Priority>("Medium");
   const [urgent, setUrgent] = useState(false);
 
+  // Optional asset (e.g. a specific appliance) tied to the selected home
   const [assetId, setAssetId] = useState("");
   const [homeAssets, setHomeAssets] = useState<{ id: string; name: string }[]>(
     [],
@@ -61,7 +63,7 @@ export function RequestForm({
   // effect — this effect only fetches the new list for whichever home is current.
   useEffect(() => {
     if (!homeId) return;
-    let cancelled = false;
+    let cancelled = false; // guards against setting state after a newer homeId change/unmount
     getAssetsForHome(homeId).then((assets) => {
       if (!cancelled)
         setHomeAssets(assets.map((a) => ({ id: a.id, name: a.name })));
@@ -71,9 +73,9 @@ export function RequestForm({
     };
   }, [homeId]);
 
-  const [photos, setPhotos] = useState<PhotoPreview[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const [photos, setPhotos] = useState<PhotoPreview[]>([]); // selected photo files + their local preview URLs
+  const [error, setError] = useState<string | null>(null); // validation/submit error banner text
+  const [pending, setPending] = useState(false); // true while the form is submitting
 
   /*
    * Clean up object URLs when the component unmounts.
@@ -86,6 +88,8 @@ export function RequestForm({
     };
   }, [photos]);
 
+  // Validates newly-selected files (type + size) and appends the valid ones
+  // as previews; invalid files are skipped and reported via the error banner.
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
 
@@ -94,6 +98,7 @@ export function RequestForm({
     const validPhotos: PhotoPreview[] = [];
 
     for (const file of files) {
+      // Reject anything that isn't an image
       if (!file.type.startsWith("image/")) {
         setError(t.notImage(file.name));
         continue;
@@ -105,6 +110,7 @@ export function RequestForm({
         continue;
       }
 
+      // Create a local blob URL so the image can be previewed before upload
       validPhotos.push({
         file,
         url: URL.createObjectURL(file),
@@ -120,6 +126,7 @@ export function RequestForm({
     e.target.value = "";
   }
 
+  // Removes a photo by index and frees its preview blob URL to avoid leaking memory
   function removePhoto(index: number) {
     setPhotos((current) => {
       const photo = current[index];
@@ -132,11 +139,14 @@ export function RequestForm({
     });
   }
 
+  // Validates required fields, creates the request, then uploads any attached
+  // photos one by one before navigating back to the staff request list.
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (pending) return;
+    if (pending) return; // prevent double-submit
 
+    // Required-field validation
     if (!homeId) {
       setError(t.chooseHomeError);
       return;
@@ -201,6 +211,8 @@ export function RequestForm({
       router.push("/staff");
       router.refresh();
     } catch (err) {
+      // Covers both request-creation failures and photo-upload failures
+      // (the latter thrown with a descriptive message above).
       console.error("Submit request error:", err);
 
       setError(err instanceof Error ? err.message : t.submitError);
@@ -211,6 +223,7 @@ export function RequestForm({
 
   return (
     <>
+      {/* Sticky header: breadcrumb + cancel/submit actions */}
       <div className="flex h-[62px] flex-none items-center gap-[8px] border-b border-black/[.08] px-7">
         <div className="h-[26px] w-[26px] rounded-md bg-graphite" />
 
@@ -238,6 +251,8 @@ export function RequestForm({
             {dict.common.cancel}
           </Link>
 
+          {/* Submits the form below via the shared `form` id, since this
+              button lives outside the <form> element in the header. */}
           <Button
             className="w-[80px]"
             type="submit"
@@ -254,7 +269,9 @@ export function RequestForm({
         onSubmit={handleSubmit}
         className="flex flex-col flex-1 md:flex-row gap-6 overflow-auto bg-canvas p-7"
       >
+        {/* Left column: main request details */}
         <div className="flex max-w-[720px] flex-1 flex-col gap-[18px]">
+          {/* Shown when arriving from the troubleshooting flow, summarizing the reported problem */}
           {troubleshooting && (
             <div className="rounded-md border border-black/[.09] bg-selected px-4 py-3 text-[12.5px] leading-[1.5] text-body">
               {t.flow.summaryBanner(troubleshooting.problem)}
@@ -264,6 +281,7 @@ export function RequestForm({
           <div className="flex flex-col gap-[18px] rounded-lg border border-black/[.09] bg-surface p-6">
             <Eyebrow>{t.whatNeedsFixing}</Eyebrow>
 
+            {/* Short title */}
             <div className="flex flex-col gap-[7px]">
               <label className="text-[13px] font-medium text-body">
                 {t.shortTitleLabel}
@@ -277,6 +295,8 @@ export function RequestForm({
             </div>
 
             <div className="flex gap-[14px]">
+              {/* Home select — changing this resets the asset picker below,
+                  since assets are scoped to a single home */}
               <div className="flex flex-1 flex-col gap-[7px]">
                 <label className="text-[13px] font-medium text-body">
                   {dict.common.table.home}
@@ -303,6 +323,7 @@ export function RequestForm({
                 </Select>
               </div>
 
+              {/* Category select */}
               <div className="flex flex-1 flex-col gap-[7px]">
                 <label className="text-[13px] font-medium text-body">
                   {dict.common.table.category}
@@ -321,6 +342,7 @@ export function RequestForm({
               </div>
             </div>
 
+            {/* Free-text room/location within the home */}
             <div className="flex flex-col gap-[7px]">
               <label className="text-[13px] font-medium text-body">
                 {t.roomLocation}
@@ -333,6 +355,8 @@ export function RequestForm({
               />
             </div>
 
+            {/* Optional asset picker — only rendered once the selected home's
+                assets have loaded (see the effect above) */}
             {homeAssets.length > 0 && (
               <div className="flex flex-col gap-[7px]">
                 <label className="text-[13px] font-medium text-body">
@@ -353,6 +377,7 @@ export function RequestForm({
               </div>
             )}
 
+            {/* Full description of the issue */}
             <div className="flex flex-col gap-[7px]">
               <label className="text-[13px] font-medium text-body">
                 {t.descriptionLabel}
@@ -372,6 +397,7 @@ export function RequestForm({
             <Eyebrow>{t.photosLabel}</Eyebrow>
 
             <div className="flex flex-wrap gap-3">
+              {/* Thumbnail + remove button for each selected photo */}
               {photos.map((photo, i) => (
                 <div
                   key={`${photo.file.name}-${photo.file.lastModified}-${i}`}
@@ -395,6 +421,7 @@ export function RequestForm({
                 </div>
               ))}
 
+              {/* Hidden native file input, triggered by the tile button below */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -404,6 +431,7 @@ export function RequestForm({
                 onChange={handleFileChange}
               />
 
+              {/* "Add photo" tile that opens the file picker */}
               <button
                 type="button"
                 disabled={pending}
@@ -417,6 +445,7 @@ export function RequestForm({
             <p className="text-[11.5px] text-meta">{t.photoHint}</p>
           </div>
 
+          {/* Validation/submit error banner */}
           {error && (
             <div
               className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
@@ -427,11 +456,12 @@ export function RequestForm({
           )}
         </div>
 
-        {/* PRIORITY */}
+        {/* PRIORITY — right-hand sidebar column */}
         <div className="flex w-[340px] flex-none flex-col gap-4">
           <div className="flex flex-col gap-[14px] rounded-lg border border-black/[.09] bg-surface p-5">
             <Eyebrow>{dict.common.table.priority}</Eyebrow>
 
+            {/* Priority level picker (Low/Medium/High) */}
             <div className="flex flex-col gap-2">
               {(["Low", "Medium", "High"] as Priority[]).map((p) => (
                 <button
@@ -454,6 +484,7 @@ export function RequestForm({
               ))}
             </div>
 
+            {/* Urgent flag toggle */}
             <div className="flex items-start gap-[11px] border-t border-black/[.07] pt-[14px]">
               <Toggle
                 on={urgent}

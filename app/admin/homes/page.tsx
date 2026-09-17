@@ -3,8 +3,12 @@ import { HomesView, type HomeRow, type AgencyRow, type PersonRow } from "./homes
 
 export const dynamic = "force-dynamic";
 
+// Statuses that count toward each home's open-request badge
 const OPEN_STATUSES = ["Open", "Assigned", "In Progress", "Waiting for Parts"];
 
+// Agencies/homes/people management page: joins auth emails (from listUsers,
+// since email isn't stored on the profiles table) with profile and
+// home/agency data, plus each home's open-request count.
 export default async function HomesAndStaffPage() {
   const admin = createAdminClient();
 

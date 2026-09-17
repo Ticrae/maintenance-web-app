@@ -2,6 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isRole, roleDestinations } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
+// Handles the OAuth/PKCE `code` redirect (e.g. "Continue with Google"),
+// exchanging it for a session and routing the user to their role's home
+// area. Signs back out and redirects to login with an error if the user has
+// no valid role assigned.
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");

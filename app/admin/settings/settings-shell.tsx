@@ -9,6 +9,8 @@ import { InspectionManager } from "@/components/inspection-manager";
 import type { TemplateListItem } from "@/components/inspection-manager";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Tabbed admin settings page: troubleshooting-guide authoring, inspection-
+// checklist authoring, and general platform settings (categories/SLA).
 export function SettingsShell({
   settings,
   assetTypes,

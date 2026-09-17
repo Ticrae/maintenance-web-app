@@ -21,6 +21,7 @@ export type MyJobRow = {
   homeName: string;
 };
 
+// Buckets a worker's jobs into three sections for display
 type GroupKey = "overdue" | "today" | "parts";
 
 const GROUP_TONE: Record<GroupKey, string> = {
@@ -29,12 +30,15 @@ const GROUP_TONE: Record<GroupKey, string> = {
   parts: "text-ink",
 };
 
+// The worker's own active jobs, grouped into overdue / due-today / waiting-
+// on-parts sections, each with a stage-appropriate call-to-action button.
 export function MyJobsView({ jobs, slaHours }: { jobs: MyJobRow[]; slaHours: Record<string, number> }) {
   const dict = useDictionary();
   const t = dict.maintenance.myJobs;
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // What each status's quick-action button should say and what it does when clicked
   const CTA: Record<string, { label: string; next: RequestStatus | "complete" }> = {
     Assigned: { label: t.cta.startWork, next: "In Progress" },
     "In Progress": { label: t.cta.markComplete, next: "complete" },
@@ -47,6 +51,8 @@ export function MyJobsView({ jobs, slaHours }: { jobs: MyJobRow[]; slaHours: Rec
     "Waiting for Parts": t.stage["Waiting for Parts"],
   };
 
+  // "Waiting for Parts" always gets its own bucket regardless of SLA status;
+  // everything else splits on whether it's already past its SLA deadline
   const groups = useMemo(() => {
     const overdue: MyJobRow[] = [];
     const today: MyJobRow[] = [];
@@ -67,6 +73,7 @@ export function MyJobsView({ jobs, slaHours }: { jobs: MyJobRow[]; slaHours: Rec
   const todayCount = groups.find((g) => g.key === "today")?.items.length ?? 0;
   const partsCount = groups.find((g) => g.key === "parts")?.items.length ?? 0;
 
+  // Advances a job to its next stage, or completes it, per the CTA map above
   async function handleCta(job: MyJobRow) {
     const cta = CTA[job.status];
     if (!cta) return;
@@ -165,6 +172,7 @@ export function MyJobsView({ jobs, slaHours }: { jobs: MyJobRow[]; slaHours: Rec
   );
 }
 
+// Small label/value line used in the sidebar overview
 function Row({ label, value, tone = "text-ink" }: { label: string; value: React.ReactNode; tone?: string }) {
   return (
     <div className="flex items-center justify-between text-[13px] text-body">

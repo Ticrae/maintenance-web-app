@@ -6,6 +6,7 @@ import { getServerDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
+// Supervisor's own agency's "maintenance intelligence" insights, using the shared component
 export default async function SupervisorIntelligencePage() {
   const dict = await getServerDictionary();
   const supabase = await createClient();

@@ -25,6 +25,8 @@ export type AssetRow = {
 
 const ASSET_SELECT = "*, asset_types(name), homes(name)";
 
+// Revalidates every route that could be showing this asset (both admin's and
+// supervisor's list/detail pages, since asset writes are shared across roles)
 function assetPaths(assetId?: string) {
   revalidatePath("/admin/assets");
   revalidatePath("/supervisor/assets");
@@ -55,6 +57,7 @@ async function requireHomeInAgency(
 
 // --- Reads -------------------------------------------------------------
 
+// Lists assets, optionally scoped to one agency (unscoped = platform-wide, for admin)
 export async function getAssets(agencyId?: string) {
   const admin = createAdminClient();
   let query = admin.from("assets").select(ASSET_SELECT).order("name");
@@ -68,6 +71,8 @@ export async function getAssets(agencyId?: string) {
   return data ?? [];
 }
 
+// Active assets for a single home, used to populate the "which item?"
+// picker on the new-request form
 export async function getAssetsForHome(homeId: string) {
   const admin = createAdminClient();
   const { data, error } = await admin
@@ -102,6 +107,9 @@ export type AssetCaseFileRequest = {
   completed_at: string | null;
 };
 
+// Builds the full "case file" view for one asset: its request history plus
+// derived stats (total cost, downtime, recent failure count, cost-by-year,
+// and whether it crosses either replacement-recommendation threshold).
 export async function getAssetCaseFile(assetId: string) {
   const admin = createAdminClient();
 
@@ -262,6 +270,8 @@ export type AssetInput = {
   purchase_price?: number;
 };
 
+// Creates an asset under the given home; an agency_admin can only target a
+// home in their own agency, while super_admin can target any home.
 export async function createAsset(input: AssetInput) {
   const profile = await requireRole(["super_admin", "agency_admin"]);
   const admin = createAdminClient();
@@ -297,6 +307,8 @@ export async function createAsset(input: AssetInput) {
   return data;
 }
 
+// Updates an existing asset's fields; enforces that an agency_admin can only
+// touch assets (and reassign to homes) within their own agency.
 export async function updateAsset(id: string, input: AssetInput) {
   const profile = await requireRole(["super_admin", "agency_admin"]);
   const admin = createAdminClient();
@@ -329,6 +341,8 @@ export async function updateAsset(id: string, input: AssetInput) {
   assetPaths(id);
 }
 
+// Soft-deletes an asset (marks it retired rather than removing the row) so
+// its request history and cost data remain intact
 export async function retireAsset(id: string) {
   const profile = await requireRole(["super_admin", "agency_admin"]);
   const admin = createAdminClient();

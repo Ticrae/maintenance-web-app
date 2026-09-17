@@ -2,6 +2,8 @@ import type { ButtonHTMLAttributes } from "react";
 
 export type ButtonVariant = "primary" | "outline" | "ghost" | "happy";
 
+// Builds the className string for a button variant — exported separately
+// from <Button> so non-button elements (e.g. <Link>) can share the same styling.
 export function buttonClasses(
   variant: ButtonVariant = "primary",
   className = "",
@@ -17,6 +19,7 @@ export function buttonClasses(
   return `${base} ${variants[variant]} ${className}`.trim();
 }
 
+// Thin wrapper around <button> that applies the shared variant styling
 export function Button({
   variant = "primary",
   className = "",

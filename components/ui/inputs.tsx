@@ -6,6 +6,7 @@ import type {
   SelectHTMLAttributes,
 } from "react";
 
+// Styled <input> that forwards all native input props/handlers unchanged
 export function TextField(props: InputHTMLAttributes<HTMLInputElement>) {
   const { className = "", ...rest } = props;
   return (
@@ -16,6 +17,7 @@ export function TextField(props: InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
+// Styled <textarea> that forwards all native textarea props/handlers unchanged
 export function TextArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const { className = "", ...rest } = props;
   return (
@@ -26,6 +28,7 @@ export function TextArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   );
 }
 
+// Styled native <select> with a custom dropdown-arrow background image
 export function Select({
   className = "",
   children,
@@ -41,6 +44,8 @@ export function Select({
   );
 }
 
+// Custom checkbox: a visually-hidden real <input type="checkbox"> (for
+// accessibility/forms) paired with a styled box, plus an optional trailing count.
 export function Checkbox({
   checked,
   onChange,
@@ -78,6 +83,8 @@ export function Checkbox({
   );
 }
 
+// Custom switch built from a <button role="switch"> (no native toggle
+// element exists in HTML) with a sliding knob and an optional "urgent" tone.
 export function Toggle({
   on,
   onChange,

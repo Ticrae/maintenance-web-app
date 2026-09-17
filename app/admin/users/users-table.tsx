@@ -29,12 +29,16 @@ export type AgencyOption = { id: string; name: string };
 export type HomeOption = { id: string; name: string; agency_id: string };
 
 const ROLES: Role[] = ["staff", "maintenance", "agency_admin", "super_admin"];
+// Shared grid-template-columns for both the header row and each data row, so
+// their columns always line up
 const GRID_COLS = "grid-cols-[36px_minmax(180px,1fr)_190px_150px_140px_140px_100px_130px]";
 
 function displayName(u: { first_name: string | null; last_name: string | null }, dict: Dictionary) {
   return [u.first_name, u.last_name].filter(Boolean).join(" ") || dict.common.unnamed;
 }
 
+// User management table: search, inline role change, invite/edit drawers,
+// and a two-step confirm before deleting a user (can't delete yourself).
 export function UsersTable({
   users,
   agencies,
@@ -63,6 +67,7 @@ export function UsersTable({
     );
   }, [users, search, dict]);
 
+  // Quick inline role change from the row's dropdown
   async function handleRoleChange(userId: string, role: string) {
     setRowError(null);
     setPendingId(userId);
@@ -75,6 +80,7 @@ export function UsersTable({
     }
   }
 
+  // Called only after the two-step confirm below
   async function handleDelete(userId: string) {
     setRowError(null);
     setPendingId(userId);
@@ -220,6 +226,8 @@ export function UsersTable({
   );
 }
 
+// Shared invite/edit drawer — `mode` picks which server action the form
+// binds to and whether the email field is shown (email is fixed once invited).
 function UserDrawer({
   mode,
   user,
@@ -240,10 +248,12 @@ function UserDrawer({
     undefined
   );
   const [agencyId, setAgencyId] = useState(user?.agency_id ?? "");
+  // Home options are scoped to the currently-selected agency
   const eligibleHomes = homes.filter((h) => h.agency_id === agencyId);
   const dict = useDictionary();
   const t = dict.admin.users;
 
+  // Closes the drawer once the action succeeds (state has no error)
   useEffect(() => {
     if (state && !state.error) onClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { UsersTable, type UserRow, type AgencyOption, type HomeOption } from "./users-table";
 
+// Every user platform-wide, with emails joined in from auth.listUsers
+// (email isn't stored on the profiles table)
 export default async function AdminUsersPage() {
   const supabase = await createClient();
   const {

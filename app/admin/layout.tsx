@@ -4,6 +4,9 @@ import { usePathname } from "next/navigation";
 import { TABS, TopTabs } from "@/components/top-tabs";
 import { AdminMobileNav } from "./admin-mobile-nav";
 
+// Shared shell for every /admin page: renders the mobile nav + desktop top
+// tabs, both driven by the same TABS list, highlighted by whichever tab's
+// href prefixes the current path.
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const active =

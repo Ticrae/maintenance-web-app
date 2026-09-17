@@ -1,5 +1,9 @@
+// Translation strings for the unauthenticated auth flow (login, password
+// reset, invite acceptance). The `en` and `fr` objects mirror the same key
+// shape so any consumer can index by locale without conditional logic.
 export const auth = {
   en: {
+    // Login page copy
     login: {
       promoEyebrow: "Maintenance + Homes",
       promoHeadline: "Report it once. Everyone sees where it stands.",
@@ -26,6 +30,7 @@ export const auth = {
       inviteError: "This invite link is invalid or has expired. Ask your admin to send you a new one.",
       noAccount: "No account? Contact your home manager or admin.",
     },
+    // "Forgot password" request page copy
     forgotPassword: {
       title: "Forgot your password?",
       subtitle: "Enter your work email and we'll send a link to set a new one.",
@@ -34,6 +39,7 @@ export const auth = {
       submitting: "Sending...",
       backToLogin: "← Back to log in",
       checkEmailTitle: "Check your email",
+      // JSX so the email address can be bolded inline within the sentence
       checkEmailBody: (email: string) => (
         <>
           If an account exists for <strong className="text-ink">{email}</strong>, we sent a password reset link.
@@ -42,6 +48,7 @@ export const auth = {
       nothingArrived: "Nothing arrived?",
       spamHint: "Check your spam folder or make sure you entered the correct work email.",
     },
+    // Password reset (after following the emailed link) page copy
     resetPassword: {
       title: "Set a new password",
       subtitle: "Enter your new password below.",
@@ -52,6 +59,7 @@ export const auth = {
       mismatch: "Passwords do not match.",
       tooShort: "Password must be at least 8 characters.",
     },
+    // Invite-acceptance (new account activation) page copy
     acceptInvite: {
       title: "Welcome aboard",
       subtitle: "Set a password to activate your account.",
@@ -63,6 +71,7 @@ export const auth = {
       tooShort: "Password must be at least 8 characters.",
     },
   },
+  // French translations — same keys/shape as `en` above
   fr: {
     login: {
       promoEyebrow: "Maintenance et maisons",

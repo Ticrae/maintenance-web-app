@@ -6,6 +6,7 @@ import { ComplianceView } from "@/components/compliance-view";
 
 export const dynamic = "force-dynamic";
 
+// Supervisor's own agency's compliance dashboard, using the shared ComplianceView
 export default async function SupervisorCompliancePage() {
   const supabase = await createClient();
   const {

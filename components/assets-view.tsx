@@ -9,8 +9,11 @@ import { AssetStatusBadge } from "@/components/ui/badges";
 import { tableWrapClass, tableHeadRowClass, tableRowClass } from "@/components/ui/table";
 import { useDictionary } from "@/lib/i18n/language-provider";
 
+// Shared grid-template-columns for both the header row and each data row, so
+// their columns always line up
 const GRID_COLS = "grid-cols-[minmax(180px,1fr)_140px_160px_110px_140px]";
 
+// Local editable copy of an asset's fields while the create/edit drawer is open
 type FormState = {
   name: string;
   home_id: string;
@@ -33,6 +36,9 @@ const EMPTY_FORM: FormState = {
   purchase_price: "",
 };
 
+// Shared asset directory for both admin and supervisor — `namespace` only
+// picks which role's translation strings to display, and `basePath` points
+// each row's link at the right role-scoped asset detail route.
 export function AssetsView({
   assets,
   homes,
@@ -66,6 +72,7 @@ export function AssetsView({
     );
   });
 
+  // Resets the drawer to a blank form for adding a new asset
   function openCreate() {
     setEditingId(null);
     setForm({ ...EMPTY_FORM, home_id: homes[0]?.id ?? "", asset_type_id: assetTypes[0]?.id ?? "" });
@@ -73,6 +80,7 @@ export function AssetsView({
     setDrawerOpen(true);
   }
 
+  // Preloads the drawer's form with an existing asset's fields
   function openEdit(asset: AssetRow) {
     setEditingId(asset.id);
     setForm({
@@ -89,6 +97,7 @@ export function AssetsView({
     setDrawerOpen(true);
   }
 
+  // Creates or updates the asset depending on whether one is being edited
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim() || !form.home_id || !form.asset_type_id) return;
@@ -124,6 +133,7 @@ export function AssetsView({
     }
   }
 
+  // Soft-deletes an asset after confirmation (keeps its request history intact)
   async function handleRetire(asset: AssetRow) {
     if (!window.confirm(t.retireConfirm)) return;
     try {
@@ -199,6 +209,7 @@ export function AssetsView({
         </div>
       </div>
 
+      {/* Slide-over create/edit drawer, dismissed by clicking the backdrop or × */}
       {drawerOpen && (
         <>
           <div className="fixed inset-0 z-10 bg-black/20" onClick={() => setDrawerOpen(false)} />

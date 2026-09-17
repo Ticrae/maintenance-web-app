@@ -1,5 +1,9 @@
+// Translation strings for the super-admin ("/admin") area: platform-wide
+// nav, reports, homes/assets/contractors/users management, and the
+// troubleshooting-guide + inspection-checklist authoring tools.
 export const admin = {
   en: {
+    // Sidebar navigation labels
     nav: {
       intelligence: "Intelligence",
       reports: "Reports",
@@ -12,6 +16,7 @@ export const admin = {
       settings: "Troubleshooting",
       menu: "Menu",
     },
+    // Cross-agency reports dashboard (SLA stats, assignment queue)
     reports: {
       title: "Reports",
       subtitle: "Response times and workload across all homes",
@@ -28,12 +33,14 @@ export const admin = {
       assignError: "Could not assign this request.",
       allAssigned: "All requests are assigned.",
     },
+    // All-homes requests table
     requests: {
       title: "Requests",
       subtitle: "Every maintenance request across all homes",
       searchPlaceholder: "Search description or home…",
       noMatch: "No requests match.",
     },
+    // Agencies/homes/people management view
     homes: {
       agencies: "Agencies",
       addAgency: "Add agency",
@@ -59,6 +66,7 @@ export const admin = {
       createAgencyError: "Could not create agency.",
       createAgency: "Create agency",
     },
+    // Cross-agency asset directory (create/edit/retire)
     assets: {
       title: "Assets",
       subtitle: "Every physical asset across all homes",
@@ -91,6 +99,7 @@ export const admin = {
       title: "Compliance",
       subtitle: "Evidence that maintenance work is actually documented, across all homes",
     },
+    // Contractor directory (create/edit/retire)
     contractors: {
       title: "Contractors",
       subtitle: "Vendor directory across all agencies",
@@ -117,6 +126,7 @@ export const admin = {
       noContractorsYet: "No contractors yet.",
       noMatch: "No contractors match.",
     },
+    // User/account management (invite, edit role, delete)
     users: {
       title: "Users",
       subtitle: "Everyone with access, across all agencies",
@@ -139,6 +149,7 @@ export const admin = {
       sendInvite: "Send invite",
       saveChanges: "Save changes",
     },
+    // Platform settings (request categories, SLA targets)
     settings: {
       title: "Settings",
       subtitle: "Platform-wide configuration",
@@ -155,6 +166,8 @@ export const admin = {
       hours: "hrs",
       saveSettings: "Save settings",
     },
+    // Troubleshooting-guide authoring tool: asset types, guides, their
+    // steps, and each step's branching options
     troubleshooting: {
       assetTypesHeading: "Asset types",
       addAssetType: "Add type",
@@ -169,6 +182,7 @@ export const admin = {
       deleteAssetTypeError: "Could not delete this asset type.",
       deleteAssetTypeConfirm: "Delete this asset type?",
 
+      // Guide list + creation form
       guidesHeading: "Guides",
       newGuide: "New guide",
       newGuideTitle: "New troubleshooting guide",
@@ -189,12 +203,14 @@ export const admin = {
       stepsCount: (n: number) => `${n} step${n === 1 ? "" : "s"}`,
       searchGuidesPlaceholder: "Search guides…",
 
+      // GuideStatus label map (see lib/theme.ts)
       status: {
         draft: "Draft",
         review: "In review",
         published: "Published",
         archived: "Archived",
       },
+      // SafetyLevel label map, long and short forms
       safety: {
         safe: "Safe — resident/staff can perform",
         caution: "Caution — basic check only",
@@ -211,6 +227,7 @@ export const admin = {
         information: "Information",
       },
 
+      // Guide detail/edit panel
       guideDetails: "Guide details",
       statusField: "Status",
       saveGuide: "Save guide",
@@ -219,6 +236,7 @@ export const admin = {
       deleteGuideConfirm: "Delete this guide and all of its steps? This can't be undone.",
       deleteGuideError: "Could not delete this guide.",
 
+      // Per-guide step list/editor
       steps: "Steps",
       addStep: "Add step",
       addStepTitle: "Add step",
@@ -241,6 +259,7 @@ export const admin = {
       moveDown: "Move down",
       step: "Step",
 
+      // Per-step branching options (continue/create request/finish/stop)
       options: "Options",
       addOption: "Add option",
       optionLabelField: "Label",
@@ -257,6 +276,7 @@ export const admin = {
       noOptionsYet: "No options yet.",
       chooseTargetStep: "Choose a step",
     },
+    // Inspection-checklist authoring tool: templates and their items
     inspections: {
       templatesHeading: "Checklists",
       searchPlaceholder: "Search checklists…",
@@ -293,6 +313,7 @@ export const admin = {
       deleteItemError: "Could not delete this item.",
     },
   },
+  // French translations — same keys/shape as `en` above
   fr: {
     nav: {
       intelligence: "Intelligence",

@@ -13,16 +13,20 @@ export type TemplateStatus = "draft" | "published" | "archived";
 const AUTHOR_ROLES = ["super_admin", "agency_admin"] as const;
 const RUNNER_ROLES = ["staff", "maintenance", "agency_admin"] as const;
 
+// Swaps a raw foreign-key-violation error (23503) for a friendlier message;
+// passes through any other error's message unchanged
 function friendlyError(error: { code?: string; message: string }, fallback: string) {
   if (error.code === "23503") return fallback;
   return error.message;
 }
 
+// Revalidates both roles' checklist-authoring pages
 function authoringPaths() {
   revalidatePath("/admin/settings");
   revalidatePath("/supervisor/inspections");
 }
 
+// Revalidates every role's "run an inspection" page
 function runnerPaths() {
   revalidatePath("/staff/inspections");
   revalidatePath("/maintenance/inspections");
@@ -71,6 +75,7 @@ export type TemplateListRow = {
   agencies: { name: string } | null;
 };
 
+// Lists checklist templates (with item counts), optionally scoped to one agency
 export async function getTemplates(agencyId?: string): Promise<(TemplateListRow & { itemCount: number })[]> {
   const admin = createAdminClient();
   let query = admin.from("inspection_templates").select("*, agencies(name)").order("updated_at", { ascending: false });
@@ -107,6 +112,7 @@ export type ItemRow = {
 
 export type TemplateDetail = TemplateListRow & { items: ItemRow[] };
 
+// Loads a single template with its items, for the authoring detail panel
 export async function getTemplateDetail(id: string): Promise<TemplateDetail | null> {
   const profile = await requireRole([...AUTHOR_ROLES]);
   const admin = createAdminClient();
@@ -129,6 +135,7 @@ export async function getTemplateDetail(id: string): Promise<TemplateDetail | nu
   return { ...template, items: items ?? [] };
 }
 
+// Creates a new checklist template, starting out as a draft
 export async function createTemplate(input: { agency_id: string; name: string; description?: string }) {
   const profile = await requireRole([...AUTHOR_ROLES]);
   if (profile.role === "agency_admin" && input.agency_id !== profile.agency_id) {
@@ -154,6 +161,7 @@ export async function createTemplate(input: { agency_id: string; name: string; d
   return data;
 }
 
+// Updates a template's name/description/status/agency
 export async function updateTemplateMeta(
   id: string,
   input: { name: string; description?: string; status: TemplateStatus; agency_id: string }
@@ -182,6 +190,9 @@ export async function updateTemplateMeta(
   authoringPaths();
 }
 
+// Hard-deletes a template, but only if it has no recorded runs yet (once
+// runs exist, archiving via updateTemplateMeta is the only option, to keep
+// run history intact).
 export async function deleteTemplate(id: string) {
   const profile = await requireRole([...AUTHOR_ROLES]);
   const admin = createAdminClient();
@@ -206,6 +217,7 @@ export async function deleteTemplate(id: string) {
   authoringPaths();
 }
 
+// Appends a new item to a template, placed after the current last item
 export async function createItem(input: { template_id: string; section?: string; label: string }) {
   const profile = await requireRole([...AUTHOR_ROLES]);
   const admin = createAdminClient();
@@ -235,6 +247,7 @@ export async function createItem(input: { template_id: string; section?: string;
   authoringPaths();
 }
 
+// Updates a single item's label/section
 export async function updateItem(id: string, input: { section?: string; label: string }) {
   const profile = await requireRole([...AUTHOR_ROLES]);
   const admin = createAdminClient();
@@ -253,6 +266,7 @@ export async function updateItem(id: string, input: { section?: string; label: s
   authoringPaths();
 }
 
+// Deletes a single item from its template
 export async function deleteItem(id: string) {
   const profile = await requireRole([...AUTHOR_ROLES]);
   const admin = createAdminClient();
@@ -267,6 +281,8 @@ export async function deleteItem(id: string) {
   authoringPaths();
 }
 
+// Reorders an item by swapping sort_order with its immediate neighbor in the
+// given direction; a no-op if there's no such neighbor (already first/last)
 export async function moveItem(id: string, template_id: string, direction: "up" | "down") {
   const profile = await requireRole([...AUTHOR_ROLES]);
   const admin = createAdminClient();
@@ -304,6 +320,8 @@ export async function moveItem(id: string, template_id: string, direction: "up" 
 
 export type RunnableTemplate = { id: string; name: string; description: string | null; itemCount: number };
 
+// Published templates with at least one item, for the caller's own agency —
+// what the "start an inspection" picker offers
 export async function getRunnableTemplates(): Promise<RunnableTemplate[]> {
   const profile = await requireRole([...RUNNER_ROLES]);
   if (!profile.agency_id) return [];
@@ -337,6 +355,8 @@ export async function getRunnableTemplates(): Promise<RunnableTemplate[]> {
     .map((t) => ({ ...t, itemCount: counts[t.id] ?? 0 }));
 }
 
+// Starts a new inspection run for a published template at a home, both
+// validated as belonging to the caller's own agency
 export async function startRun(templateId: string, homeId: string) {
   const profile = await requireRole([...RUNNER_ROLES]);
   if (!profile.agency_id) throw new Error("Your account isn't linked to an agency yet.");
@@ -388,6 +408,8 @@ export type RunDetail = {
   results: ResultRow[];
 };
 
+// Loads a run's full detail (items + recorded results so far), scoped to
+// the run's own performer — returns null rather than throwing if it's not theirs
 export async function getRun(runId: string): Promise<RunDetail | null> {
   const profile = await requireRole([...RUNNER_ROLES]);
   const admin = createAdminClient();
@@ -430,6 +452,8 @@ export async function getRun(runId: string): Promise<RunDetail | null> {
   };
 }
 
+// Shared guard for every write below: the run must belong to the caller and
+// still be in progress (can't record results against a finished run)
 async function requireOwnRun(admin: ReturnType<typeof createAdminClient>, runId: string, performerId: string) {
   const { data: run } = await admin
     .from("inspection_runs")
@@ -450,6 +474,7 @@ async function requireOwnRun(admin: ReturnType<typeof createAdminClient>, runId:
   return run;
 }
 
+// Records (or overwrites, via upsert) a single item's pass/fail result for this run
 export async function recordResult(runId: string, itemId: string, input: { passed: boolean; notes?: string }) {
   const profile = await requireRole([...RUNNER_ROLES]);
   const admin = createAdminClient();
@@ -467,6 +492,7 @@ export async function recordResult(runId: string, itemId: string, input: { passe
   runnerPaths();
 }
 
+// Records a failing result and raises a linked maintenance request from it in one step
 export async function failItemAndCreateRequest(
   runId: string,
   itemId: string,
@@ -516,6 +542,7 @@ export async function failItemAndCreateRequest(
   return request.id as string;
 }
 
+// Marks a run completed, but only once every item on the template has a recorded result
 export async function completeRun(runId: string) {
   const profile = await requireRole([...RUNNER_ROLES]);
   const admin = createAdminClient();
@@ -549,6 +576,7 @@ export type RunHistoryRow = {
   inspection_templates: { name: string } | null;
 };
 
+// The calling user's own last 25 runs (in progress or completed), for the history list
 export async function getRunHistory(): Promise<RunHistoryRow[]> {
   const profile = await requireRole([...RUNNER_ROLES]);
   if (!profile.agency_id) return [];

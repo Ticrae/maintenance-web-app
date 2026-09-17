@@ -6,8 +6,12 @@ import { isRole, roleDestinations } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { SESSION_STARTED_COOKIE, LAST_ACTIVE_COOKIE } from "@/lib/supabase/proxy";
 
+// Shape returned by the login form action for useFormState/useActionState —
+// `undefined` means "no error yet" (initial state / success before redirect)
 export type LoginState = { error?: string } | undefined;
 
+// Signs the user out and clears the custom session-timeout cookies (see
+// lib/supabase/proxy.ts) so a fresh sign-in starts a clean inactivity/absolute timer.
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
@@ -19,6 +23,9 @@ export async function signOut() {
   redirect("/login");
 }
 
+// Login form action: authenticates, looks up the user's role, and redirects
+// to that role's home area. Returns an error object (rather than throwing)
+// so the login form can display it inline.
 export async function signIn(_: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");

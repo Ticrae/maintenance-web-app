@@ -4,6 +4,9 @@ import { RequestsTable, type RequestRow, type Assignee } from "./requests-table"
 
 export const dynamic = "force-dynamic";
 
+// Every request platform-wide, plus lookup maps for reporter/assignee
+// display names, the full pool of maintenance/agency-admin assignees, and
+// the platform-wide contractor directory (for the assignment drawer).
 export default async function AdminRequestsPage() {
   const admin = createAdminClient();
 

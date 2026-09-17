@@ -1,5 +1,9 @@
+// Translation strings for the home-staff ("/staff") area: request list,
+// new-request flow (incl. the troubleshooting guide runner), notifications,
+// and request detail.
 export const staff = {
   en: {
+    // Sidebar navigation labels
     nav: {
       myRequests: "My requests",
       notifications: "Notifications",
@@ -13,6 +17,7 @@ export const staff = {
       you: "You",
       noHomeAssigned: "No home assigned",
     },
+    // Staff member's own requests list
     myRequests: {
       title: "My requests",
       searchPlaceholder: "Search issue or category…",
@@ -25,6 +30,8 @@ export const staff = {
       noRequestsYet: "No requests yet.",
       clearFilter: "Clear filter",
     },
+    // New-request form fields/validation, plus the pre-submission
+    // troubleshoot-or-submit flow (guide picker + step runner)
     newRequest: {
       title: "New request",
       submit: "Submit request",
@@ -52,6 +59,8 @@ export const staff = {
       titleRequiredError: "Enter a short title.",
       descriptionRequiredError: "Enter a description.",
       submitError: "Could not submit request.",
+      // Copy for the troubleshooting-guide chooser/runner (guide-runner.tsx,
+      // new-request-flow.tsx)
       flow: {
         chooseTitle: "Report a problem",
         chooseSubtitle: "What would you like to do?",
@@ -91,6 +100,7 @@ export const staff = {
           `This request will include your troubleshooting summary for "${problem}".`,
       },
     },
+    // Notifications feed
     notifications: {
       subtitle: (homeName: string) => `Recent activity · ${homeName}`,
       filterStatus: "Status changes",
@@ -104,6 +114,7 @@ export const staff = {
       statusChanged: (title: string, status: string) => `"${title}" is now ${status}`,
       yourHomeFallback: "your home",
     },
+    // Single-request detail page: status progress, photos, comments
     requestDetail: {
       unknown: "Unknown",
       commentError: "Could not post comment.",
@@ -121,6 +132,7 @@ export const staff = {
       noActivityYet: "No activity yet.",
     },
   },
+  // French translations — same keys/shape as `en` above
   fr: {
     nav: {
       myRequests: "Mes demandes",
