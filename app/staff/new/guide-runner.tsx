@@ -147,13 +147,6 @@ export function GuideRunner({
     goToStep(nextByNumber(guide!.steps, step), completed);
   }
 
-  // Resets back to the guide's first step, discarding progress
-  function restart() {
-    transitions.current = 0;
-    setAnswered(0);
-    setCurrentStepId(firstStep(guide!.steps)?.id ?? null);
-  }
-
   const isMaintenanceOnly = step.safety_level === "maintenance_required";
 
   return (
@@ -224,7 +217,7 @@ export function GuideRunner({
       </div>
 
       <button
-        onClick={restart}
+        onClick={onBack}
         className="self-start text-[12.5px] text-meta hover:text-ink hover:underline"
       >
         {t.startOver}

@@ -90,14 +90,17 @@ export function InspectionRunner({
     getRun(runId).then(setRun);
   }
 
-  // Marks the run complete and refreshes the history list to include it
+  // Marks the run complete, refreshes the history list to include it, and
+  // returns to the start/history screen (clearing `runId` is what takes us
+  // out of the mid-run RunScreen — see the `if (runId)` check below).
   async function handleFinish() {
     if (!runId) return;
     try {
       await completeRun(runId);
-      setFinished(true);
       setHistory(await getRunHistory());
-      alert("Inspection completed successfully.");
+      setRunId(null);
+      setRun(null);
+      setFinished(true);
     } catch (e) {
       window.alert(e instanceof Error ? e.message : t.finishError);
     }

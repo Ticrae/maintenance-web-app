@@ -6,7 +6,9 @@ import {
   requireSuperAdmin,
 } from "@/lib/supabase/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import type { Priority } from "@/lib/theme";
+import { nowMs } from "@/lib/date";
 
 export type RequestStatus =
   | "Open"
@@ -204,6 +206,66 @@ export async function submitStaffRequest(input: {
 
   return {
     id: data.id as string,
+  };
+}
+
+// Sidebar/mobile-nav badge counts for the current staff member's home. Called
+// client-side (see staff-sidebar.tsx) on every navigation within /staff,
+// because the shared layout that first computes these is cached client-side
+// by Next.js and isn't re-run on soft navigation — only fetching fresh here
+// keeps the sidebar in sync with the always-freshly-rendered requests table.
+export async function getStaffSidebarCounts() {
+  // Mirrors staff/layout.tsx's own lookup exactly (no role check there
+  // either) so this can never diverge from — or fail to match — the numbers
+  // that page computed on the last full load.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("home_id")
+    .eq("id", user.id)
+    .maybeSingle<{ home_id: string | null }>();
+
+  const admin = createAdminClient();
+
+  const homeId = profile?.home_id ?? null;
+
+  const { data: requests } = homeId
+    ? await admin.from("requests").select("id, status").eq("home_id", homeId)
+    : { data: [] };
+
+  const rows = requests ?? [];
+  const openCount = rows.filter((r) => r.status === "Open").length;
+  const inProgressCount = rows.filter(
+    (r) =>
+      r.status === "Assigned" ||
+      r.status === "In Progress" ||
+      r.status === "Waiting for Parts",
+  ).length;
+  const completedCount = rows.filter((r) => r.status === "Completed").length;
+  const cancelledCount = rows.filter((r) => r.status === "Cancelled").length;
+
+  const dayAgo = new Date(nowMs() - 24 * 3600_000).toISOString();
+  const requestIds = rows.map((r) => r.id);
+  const { count: recentComments } = requestIds.length
+    ? await admin
+        .from("request_comments")
+        .select("id", { count: "exact", head: true })
+        .in("request_id", requestIds)
+        .gte("created_at", dayAgo)
+    : { count: 0 };
+
+  return {
+    totalRequests: rows.length,
+    openCount,
+    inProgressCount,
+    completedCount,
+    cancelledCount,
+    recentActivityCount: recentComments ?? 0,
   };
 }
 

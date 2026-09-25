@@ -12,6 +12,7 @@ export const staff = {
       openCount: (n: number) => `Open · ${n}`,
       inProgressCount: (n: number) => `In progress · ${n}`,
       completedCount: (n: number) => `Completed · ${n}`,
+      cancelledCount: (n: number) => `Cancelled · ${n}`,
     },
     layout: {
       you: "You",
@@ -34,7 +35,7 @@ export const staff = {
     // troubleshoot-or-submit flow (guide picker + step runner)
     newRequest: {
       title: "New request",
-      submit: "Submit request",
+      submit: "Submit",
       submitting: "Submitting…",
       whatNeedsFixing: "What needs fixing",
       shortTitleLabel: "Short title",
@@ -142,6 +143,7 @@ export const staff = {
       openCount: (n: number) => `Ouvertes · ${n}`,
       inProgressCount: (n: number) => `En cours · ${n}`,
       completedCount: (n: number) => `Terminées · ${n}`,
+      cancelledCount: (n: number) => `Annulées · ${n}`,
     },
     layout: {
       you: "Vous",
@@ -161,7 +163,7 @@ export const staff = {
     },
     newRequest: {
       title: "Nouvelle demande",
-      submit: "Soumettre la demande",
+      submit: "Soumettre",
       submitting: "Envoi…",
       whatNeedsFixing: "Ce qui doit être réparé",
       shortTitleLabel: "Titre court",

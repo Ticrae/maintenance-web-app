@@ -51,6 +51,7 @@ export default async function StaffLayout({
       r.status === "Waiting for Parts",
   ).length;
   const completedCount = rows.filter((r) => r.status === "Completed").length;
+  const cancelledCount = rows.filter((r) => r.status === "Cancelled").length;
 
   // "Recent activity" badge: comments posted on this home's requests in the last 24h
   const dayAgo = new Date(nowMs() - 24 * 3600_000).toISOString();
@@ -79,6 +80,7 @@ export default async function StaffLayout({
         openCount={openCount}
         inProgressCount={inProgressCount}
         completedCount={completedCount}
+        cancelledCount={cancelledCount}
         recentActivityCount={recentComments ?? 0}
         name={name}
         subtitle={subtitle}

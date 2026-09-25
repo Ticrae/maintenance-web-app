@@ -38,6 +38,7 @@ const STATUS_FILTERS: Record<string, RequestStatus[]> = {
   open: ["Open"],
   "in-progress": ["Assigned", "In Progress", "Waiting for Parts"],
   completed: ["Completed"],
+  cancelled: ["Cancelled"],
 };
 
 // Formats a duration in ms as "1h 30m" or just "45m" when under an hour
@@ -105,7 +106,9 @@ export function MyRequestsTable({
         ? t.statInProgress
         : statusFilter === "completed"
           ? dict.common.status.Completed
-          : null;
+          : statusFilter === "cancelled"
+            ? dict.common.status.Cancelled
+            : null;
 
   return (
     <>
